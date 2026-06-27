@@ -86,6 +86,11 @@ function renderTiles(containerId, sectionId, items, kind) {
   }
 }
 
+const PLATFORM_ALIASES = {
+  x: "twitter",
+  "x / twitter": "twitter",
+};
+
 const PLATFORM_META = {
   instagram: { icon: "📸", label: "Instagram" },
   linkedin: { icon: "💼", label: "LinkedIn" },
@@ -97,6 +102,43 @@ const PLATFORM_META = {
   website: { icon: "🌐", label: "Website" },
 };
 
+const EXTERNAL_LINK_ICON =
+  '<svg class="presence-ext" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7l-10 10" /><path d="M8 7l9 0l0 9" /></svg>';
+
+function normalizePlatformKey(platform) {
+  const key = String(platform || "").trim().toLowerCase();
+  return PLATFORM_ALIASES[key] || key;
+}
+
+function inferPlatformFromUrl(url) {
+  const u = String(url || "").toLowerCase();
+  if (/instagram\.com\//.test(u)) return "instagram";
+  if (/linkedin\.com\/(in|pub|company)\//.test(u)) return "linkedin";
+  if (/(twitter|x)\.com\//.test(u)) return "twitter";
+  if (/tiktok\.com\//.test(u)) return "tiktok";
+  if (/facebook\.com\//.test(u)) return "facebook";
+  if (/github\.com\//.test(u)) return "github";
+  if (/(depop|etsy|ebay|shopee|mercari|poshmark|grailed|reverb|vinted)\./.test(u)) return "marketplace";
+  return "website";
+}
+
+function resolvePlatformMeta(platform, url) {
+  const fromPlatform = PLATFORM_META[normalizePlatformKey(platform)];
+  if (fromPlatform) return fromPlatform;
+  const fromUrl = PLATFORM_META[inferPlatformFromUrl(url)];
+  if (fromUrl) return fromUrl;
+  let label = String(platform || "").trim();
+  if (!label && url) {
+    try {
+      label = new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      label = "Website";
+    }
+  }
+  if (!label) label = "Website";
+  return { icon: "🌐", label: label.charAt(0).toUpperCase() + label.slice(1) };
+}
+
 const SIGNAL_META = {
   strong: { label: "Strong identity", cls: "signal-strong" },
   some: { label: "Some presence", cls: "signal-some" },
@@ -107,12 +149,14 @@ const SIGNAL_META = {
 function renderPresence(presence) {
   const section = document.getElementById("sec-presence");
   const grid = document.getElementById("presence-grid");
+  const linksLabel = document.getElementById("presence-links-label");
   const signalEl = document.getElementById("presence-signal");
   const summaryEl = document.getElementById("presence-summary");
   grid.innerHTML = "";
+  if (linksLabel) linksLabel.hidden = true;
 
   const platforms = (presence && Array.isArray(presence.platforms) ? presence.platforms : []).filter(
-    (p) => p && p.url && PLATFORM_META[p.platform]
+    (p) => p && p.url
   );
   const signalKey = (presence && presence.identitySignal) || (platforms.length ? "some" : "none");
 
@@ -133,37 +177,43 @@ function renderPresence(presence) {
       : "No matching public profiles were found — not necessarily suspicious.");
 
   for (const p of platforms) {
-    const meta = PLATFORM_META[p.platform];
+    const meta = resolvePlatformMeta(p.platform, p.url);
     const conf = (p.confidence || "low").toLowerCase();
     const tile = document.createElement("a");
-    tile.className = "tile tile-presence";
+    tile.className = "presence-link";
     tile.href = p.url;
     tile.target = "_blank";
     tile.rel = "noopener noreferrer";
+    tile.title = `Open ${meta.label} profile`;
+    tile.setAttribute("aria-label", `Open ${meta.label} profile in a new tab`);
 
     const icon = document.createElement("span");
-    icon.className = "tile-icon";
+    icon.className = "presence-link-icon";
     icon.textContent = meta.icon;
 
+    const labelRow = document.createElement("span");
+    labelRow.className = "presence-link-label";
     const label = document.createElement("span");
-    label.className = "tile-label";
     label.textContent = meta.label;
+    labelRow.appendChild(label);
+    labelRow.insertAdjacentHTML("beforeend", EXTERNAL_LINK_ICON);
 
     const confEl = document.createElement("span");
-    confEl.className = `tile-conf conf-${["high", "medium", "low"].includes(conf) ? conf : "low"}`;
-    confEl.textContent = conf;
+    confEl.className = `presence-link-conf conf-${["high", "medium", "low"].includes(conf) ? conf : "low"}`;
+    confEl.textContent = `${conf} confidence`;
 
     tile.appendChild(icon);
-    tile.appendChild(label);
+    tile.appendChild(labelRow);
     tile.appendChild(confEl);
     if (p.note) {
       const note = document.createElement("span");
-      note.className = "tile-detail";
+      note.className = "presence-link-note";
       note.textContent = p.note;
       tile.appendChild(note);
     }
     grid.appendChild(tile);
   }
+  if (linksLabel) linksLabel.hidden = platforms.length === 0;
 }
 
 const TRUST = {
