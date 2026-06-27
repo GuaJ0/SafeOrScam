@@ -3,7 +3,7 @@
   "name": "SafeSell",
   "version": "1.0.0",
   "description": "Detects scam listings on Carousell using semantic web search, reverse image search, and LLM reasoning.",
-  "permissions": ["activeTab", "scripting", "storage"],
+  "permissions": ["activeTab", "scripting", "storage", "identity"],
   "host_permissions": [
     "*://*.carousell.com/*",
     "*://*.carousell.sg/*",
@@ -14,7 +14,8 @@
     "*://*.carousell.co.id/*",
     "https://api.openai.com/*",
     "https://api.exa.ai/*",
-    "https://serpapi.com/*"
+    "https://serpapi.com/*",
+    "https://*.supabase.co/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -39,6 +40,32 @@
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://carousell.sg/*",
+        "*://www.carousell.sg/*",
+        "*://carousell.com/*",
+        "*://www.carousell.com/*"
+      ],
+      "exclude_matches": [
+        "*://carousell.sg/p/*",
+        "*://www.carousell.sg/p/*",
+        "*://carousell.com/p/*",
+        "*://www.carousell.com/p/*"
+      ],
+      "js": ["search-badges.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "*://carousell.sg/chat/*",
+        "*://www.carousell.sg/chat/*",
+        "*://carousell.com/chat/*",
+        "*://www.carousell.com/chat/*"
+      ],
+      "js": ["chat-monitor.js"],
+      "run_at": "document_idle"
     }
   ],
   "options_page": "options.html",
@@ -53,7 +80,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["sidebar.html", "sidebar.css", "sidebar.js"],
+      "resources": ["sidebar.html", "sidebar.css", "sidebar.js", "search-badges.js", "chat-monitor.js", "onboarding.html", "onboarding.js", "supabase-client.js"],
       "matches": [
         "*://*.carousell.com/*",
         "*://*.carousell.sg/*",
@@ -66,6 +93,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openai.com https://api.exa.ai https://serpapi.com https://*.carousell.com https://*.carousell.sg https://*.carousell.com.my https://*.carousell.ph https://*.carousell.com.hk https://*.carousell.tw https://*.carousell.co.id"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openai.com https://api.exa.ai https://serpapi.com https://*.carousell.com https://*.carousell.sg https://*.carousell.com.my https://*.carousell.ph https://*.carousell.com.hk https://*.carousell.tw https://*.carousell.co.id https://*.supabase.co"
   }
 }

@@ -1,5 +1,6 @@
 // SafeSell — background service worker.
 // All network calls live here so we never hit CORS from the content script.
+importScripts("supabase-client.js");
 
 // ---------------------------------------------------------------------------
 // API keys.
@@ -674,6 +675,64 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // async response
   }
 
+  // Google sign-in via PKCE OAuth flow.
+  if (message?.type === "SIGN_IN_GOOGLE") {
+    (async () => {
+      try {
+        const authUrl = await buildGoogleAuthUrl();
+        const redirectUrl = await chrome.identity.launchWebAuthFlow({
+          url: authUrl,
+          interactive: true,
+        });
+        // Supabase redirects back with ?code=... in the URL.
+        const url = new URL(redirectUrl);
+        const code = url.searchParams.get("code");
+        if (!code) throw new Error("No auth code returned");
+        const user = await exchangeCodeForSession(code);
+        sendResponse({ ok: true, user });
+      } catch (err) {
+        console.error("SafeSell: Google sign-in failed:", err);
+        sendResponse({ ok: false, error: err.message });
+      }
+    })();
+    return true;
+  }
+
+  // Sign out.
+  if (message?.type === "SIGN_OUT") {
+    clearSession().then(() => sendResponse({ ok: true }));
+    return true;
+  }
+
+  // Get current auth state.
+  if (message?.type === "GET_AUTH") {
+    getSession().then(({ user }) => sendResponse({ ok: true, user }));
+    return true;
+  }
+
+  // Submit a community vote.
+  if (message?.type === "SUBMIT_VOTE") {
+    const { listingUrl, verdict, comment } = message.data;
+    submitVote(listingUrl, verdict, comment)
+      .then(() => sendResponse({ ok: true }))
+      .catch((err) => sendResponse({ ok: false, error: err.message }));
+    return true;
+  }
+
+  // Fetch community votes for a listing.
+  if (message?.type === "GET_VOTES") {
+    (async () => {
+      try {
+        const data = await getVotes(message.listingUrl);
+        const { user } = await getSession();
+        sendResponse({ ok: true, ...data, user });
+      } catch (err) {
+        sendResponse({ ok: false, error: err.message });
+      }
+    })();
+    return true;
+  }
+
   // Generate the seller report and return it directly to the caller (the
   // report tab uses the sendResponse callback).
   if (message?.type === "SELLER_REPORT") {
@@ -684,5 +743,111 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ ok: true, report: { error: String(err) } });
       });
     return true; // async response
+  }
+
+  // Lightweight check for search page badges — just title + price, no images.
+  if (message?.type === "QUICK_CHECK") {
+    getKeys().then(async (keys) => {
+      if (!keys.openai) {
+        sendResponse({ ok: false });
+        return;
+      }
+      try {
+        const { listingUrl, title, price } = message.data;
+        const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${keys.openai}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            temperature: 0,
+            response_format: { type: "json_object" },
+            messages: [
+              {
+                role: "system",
+                content: "You are a scam detection assistant for Carousell Singapore. Given a listing title and price, return a quick safety verdict as JSON. Score 0=scam, 100=safe.",
+              },
+              {
+                role: "user",
+                content: `Title: ${title}\nPrice: ${price}\n\nReturn ONLY: {"verdict":"SAFE"|"CAUTION"|"SCAM","score":<0-100>}`,
+              },
+            ],
+          }),
+        });
+        const data = await res.json();
+        const result = parseVerdict(data?.choices?.[0]?.message?.content || "{}");
+        if (tabId != null) {
+          chrome.tabs.sendMessage(tabId, {
+            type: "QUICK_RESULT",
+            listingUrl: listingUrl.split("?")[0],
+            verdict: result.verdict || "CAUTION",
+            score: result.score ?? 50,
+          });
+        }
+        sendResponse({ ok: true });
+      } catch (err) {
+        console.warn("SafeSell: quick check failed:", err);
+        sendResponse({ ok: false });
+      }
+    });
+    return true;
+  }
+
+  // Chat red flag analysis via OpenAI.
+  if (message?.type === "ANALYZE_CHAT") {
+    getKeys().then(async (keys) => {
+      if (!keys.openai) { sendResponse({ ok: false }); return; }
+      try {
+        const { messages } = message.data;
+        const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${keys.openai}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            temperature: 0,
+            response_format: { type: "json_object" },
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are a scam detection expert monitoring a Carousell marketplace chat. " +
+                  "Analyse the conversation for red flags: requests to move off-platform (WhatsApp/Telegram), " +
+                  "upfront payment pressure, bank transfer requests, urgency tactics, suspicious shipping-only deals, " +
+                  "requests for personal info, fake proof of stock, or any other manipulation tactics common in Singapore marketplace scams. " +
+                  "Return ONLY JSON: {\"flagged\":true|false, \"flags\":[\"<specific red flag as a plain sentence>\", ...]}. " +
+                  "If nothing suspicious, return {\"flagged\":false,\"flags\":[]}. " +
+                  "Each flag must be a specific, concrete sentence describing exactly what was said and why it's suspicious.",
+              },
+              {
+                role: "user",
+                content: "Chat messages:\n" + messages.map((m, i) => `${i + 1}. ${m}`).join("\n"),
+              },
+            ],
+          }),
+        });
+        const data = await res.json();
+        const result = parseVerdict(data?.choices?.[0]?.message?.content || "{}");
+        if (tabId != null) {
+          chrome.tabs.sendMessage(tabId, {
+            type: "CHAT_RESULT",
+            flagged: !!result.flagged,
+            flags: Array.isArray(result.flags) ? result.flags : [],
+          });
+        }
+        sendResponse({ ok: true });
+      } catch (err) {
+        console.warn("SafeSell: chat analysis failed:", err);
+        sendResponse({ ok: false });
+      }
+    });
+    return true;
+  }
+});
+
+// Open the onboarding page on first install.
+chrome.runtime.onInstalled.addListener(async (details) => {
+  if (details.reason !== "install") return;
+  const stored = await chrome.storage.local.get("safesell_skipped_auth");
+  if (!stored.safesell_skipped_auth) {
+    chrome.tabs.create({ url: chrome.runtime.getURL("onboarding.html") });
   }
 });

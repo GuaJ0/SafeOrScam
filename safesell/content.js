@@ -272,6 +272,7 @@
     lastScrapeKey = key;
 
     postToSidebar({ type: "LOADING" });
+    postToSidebar({ type: "LISTING_URL", url: location.href.split("?")[0] });
 
     chrome.runtime.sendMessage({ type: "ANALYZE_LISTING", data: listing }, () => {
       // Swallow "receiving end does not exist" noise during fast navigation.
@@ -330,6 +331,8 @@
   chrome.runtime.onMessage.addListener((message) => {
     if (message?.type === "ANALYSIS_COMPLETE") {
       postToSidebar({ type: "RESULT", result: message.result });
+      // Re-send listing URL now that the sidebar is fully loaded and ready.
+      postToSidebar({ type: "LISTING_URL", url: location.href.split("?")[0] });
     }
   });
 
@@ -355,9 +358,29 @@
       const frame = document.getElementById(FRAME_ID);
       if (frame) {
         frame.style.width = `${msg.width || 340}px`;
-        // When collapsed, shrink the frame so it doesn't block page clicks.
         frame.style.height = msg.full === false ? "72px" : "100vh";
       }
+    } else if (msg.type === "SUBMIT_VOTE") {
+      chrome.runtime.sendMessage(
+        { type: "SUBMIT_VOTE", data: { listingUrl: msg.listingUrl, verdict: msg.verdict, comment: msg.comment } },
+        (res) => {
+          void chrome.runtime.lastError;
+          postToSidebar({ type: "VOTE_RESULT", ok: res?.ok, error: res?.error });
+        }
+      );
+    } else if (msg.type === "GET_VOTES") {
+      chrome.runtime.sendMessage({ type: "GET_VOTES", listingUrl: msg.listingUrl }, (res) => {
+        void chrome.runtime.lastError;
+        postToSidebar({ type: "VOTES_DATA", ...res });
+      });
+    } else if (msg.type === "SIGN_IN_GOOGLE") {
+      chrome.runtime.sendMessage({ type: "SIGN_IN_GOOGLE" }, (res) => {
+        void chrome.runtime.lastError;
+        if (res?.ok) {
+          // Reload community data after sign-in
+          postToSidebar({ type: "VOTES_DATA", user: res.user });
+        }
+      });
     }
   });
 
