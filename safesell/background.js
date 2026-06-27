@@ -8,9 +8,9 @@ importScripts("supabase-client.js");
 // and set them from the extension's Options page (stored in chrome.storage).
 // Keys saved via the Options page take precedence over the constants here.
 // ---------------------------------------------------------------------------
-const OPENAI_API_KEY = "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";
-const EXA_API_KEY = "f9cf66dd-6b92-4eb5-84a2-9bab0339a767";
-const SERP_API_KEY = "a3a23d20c8bda6948741f9a14bbbcfd14ecb9d8cffe1289b7156e270387dc1ba";
+const OPENAI_API_KEY = "YOUR_OPENAI_KEY";
+const EXA_API_KEY = "YOUR_EXA_KEY";
+const SERP_API_KEY = "YOUR_SERPAPI_KEY";
 
 const API_TIMEOUT_MS = 15000;
 const STOCK_PHOTO_SITES = ["shutterstock", "getty", "unsplash", "istockphoto"];
