@@ -388,6 +388,30 @@ body {
   opacity: 0.9;
 }
 
+/* ---- Report button (in verdict view) ---- */
+.report-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 20px;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f9fafb;
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.report-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+.report-btn svg {
+  color: var(--muted);
+}
+
 /* ---- Collapsed reopen tab ---- */
 .reopen-tab {
   position: fixed;
