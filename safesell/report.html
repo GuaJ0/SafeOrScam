@@ -9,12 +9,18 @@
   <body>
     <header class="topbar">
       <div class="brand">
-        <img src="icons/logo.png" alt="SafeOrScam" class="brand-logo" />
+        <img src="icons/sos-mark.svg" alt="SOS" class="brand-mark" />
+        <span class="brand-name">SOS</span>
+        <span class="brand-divider"></span>
         <span class="brand-sub">Seller Report</span>
       </div>
-      <a id="open-listing" class="topbar-link" href="#" target="_blank" hidden
-        >Back to listing ↗</a
-      >
+      <a id="open-listing" class="topbar-link" href="#" target="_blank" hidden>
+        <span>Back to listing</span>
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 7l-10 10" />
+          <path d="M8 7l9 0l0 9" />
+        </svg>
+      </a>
     </header>
 
     <main class="wrap">
@@ -49,86 +55,129 @@
         <!-- Hero -->
         <div id="hero" class="hero">
           <div class="hero-top">
-            <div>
+            <div class="gauge-wrap">
+              <svg class="gauge" width="136" height="82" viewBox="0 0 136 82" xmlns="http://www.w3.org/2000/svg">
+                <path class="gauge-track" d="M 14 74 A 54 54 0 0 1 122 74" fill="none" stroke-width="7" stroke-linecap="round" />
+                <path id="score-arc" class="gauge-fill" d="M 14 74 A 54 54 0 0 1 122 74" fill="none" stroke-width="7" stroke-linecap="round" stroke-dasharray="170" stroke-dashoffset="170" />
+                <text id="score-num" class="gauge-score" x="68" y="59" text-anchor="middle">--</text>
+                <text class="gauge-max" x="68" y="72" text-anchor="middle">/100</text>
+              </svg>
+              <div id="trust-badge" class="status-pill">
+                <span class="status-dot"></span>
+                <span id="trust-label" class="status-label"></span>
+              </div>
+            </div>
+            <div class="hero-identity">
               <p class="hero-eyebrow">Seller</p>
               <h1 id="seller-name" class="hero-name"></h1>
-            </div>
-            <div id="trust-badge" class="trust-badge">
-              <span id="trust-emoji" class="trust-emoji"></span>
-              <span id="trust-label"></span>
+              <p id="headline" class="hero-headline"></p>
             </div>
           </div>
-          <p id="headline" class="hero-headline"></p>
           <div id="stats" class="stats"></div>
         </div>
 
         <!-- What buyers love -->
         <div id="sec-positives" class="section" hidden>
-          <h2 class="section-title">
-            <span class="dot-pos"></span> What buyers love
-          </h2>
-          <div id="positives" class="tile-grid"></div>
+          <div class="section-head">
+            <span class="sec-dot dot-pos"></span>
+            <span class="sec-label">What buyers love</span>
+          </div>
+          <div id="positives" class="card-list"></div>
         </div>
 
         <!-- Common complaints -->
         <div id="sec-complaints" class="section" hidden>
-          <h2 class="section-title">
-            <span class="dot-neg"></span> Common complaints
-          </h2>
-          <div id="complaints" class="tile-grid"></div>
+          <div class="section-head">
+            <span class="sec-dot dot-neg"></span>
+            <span class="sec-label">Common complaints</span>
+          </div>
+          <div id="complaints" class="card-list"></div>
         </div>
 
         <!-- Red flags -->
         <div id="sec-redflags" class="section" hidden>
-          <h2 class="section-title"><span class="dot-flag"></span> Red flags</h2>
-          <div id="redflags" class="tile-grid"></div>
+          <div class="section-head">
+            <span class="sec-dot dot-flag"></span>
+            <span class="sec-label">Red flags</span>
+          </div>
+          <div id="redflags" class="card-list"></div>
         </div>
 
         <!-- Web presence / identity -->
         <div id="sec-presence" class="section" hidden>
-          <h2 class="section-title">
-            <span class="dot-presence"></span> Web presence &amp; identity
-          </h2>
-          <div id="presence-banner" class="presence-banner">
+          <div class="section-head">
+            <span class="sec-dot dot-presence"></span>
+            <span class="sec-label">Web presence &amp; identity</span>
+          </div>
+          <div class="presence-card">
             <span id="presence-signal" class="presence-pill"></span>
             <span id="presence-summary" class="presence-summary"></span>
           </div>
-          <div id="presence-grid" class="tile-grid"></div>
+          <div id="presence-grid" class="presence-links"></div>
         </div>
 
-        <!-- Safety tips -->
+        <!-- How to stay safe -->
         <div id="sec-tips" class="section" hidden>
-          <h2 class="section-title">
-            <span class="dot-tip"></span> How to stay safe
-          </h2>
-          <div id="tips" class="tile-grid"></div>
-        </div>
-
-        <!-- Narrative cards -->
-        <div class="card-row">
-          <div class="info-card">
-            <h3>📈 Seller activity &amp; history</h3>
-            <p id="activity"></p>
+          <div class="section-head">
+            <span class="sec-dot dot-tip"></span>
+            <span class="sec-label">How to stay safe</span>
           </div>
-          <div class="info-card">
-            <h3>🧭 Why this rating</h3>
-            <p id="assessment"></p>
+          <div id="tips" class="card-list"></div>
+        </div>
+
+        <!-- Analysis cards -->
+        <div class="analysis-grid">
+          <div class="analysis-card">
+            <div class="card-head">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 19l16 0" />
+                <path d="M4 15l4 -6l4 2l4 -5l4 4" />
+              </svg>
+              <span>Seller activity &amp; history</span>
+            </div>
+            <p id="activity" class="card-body"></p>
+          </div>
+          <div class="analysis-card">
+            <div class="card-head">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M11.46 20.846a12 12 0 0 1 -7.96 -14.846a12 12 0 0 0 8.5 -3a12 12 0 0 0 8.5 3a12 12 0 0 1 -.09 7.06" />
+                <path d="M15 19l2 2l4 -4" />
+              </svg>
+              <span>Why this rating</span>
+            </div>
+            <p id="assessment" class="card-body"></p>
           </div>
         </div>
 
-        <div class="info-card">
-          <h3>🌐 Web intelligence</h3>
-          <p id="webintel"></p>
-          <a id="profile-link" class="profile-link" href="#" target="_blank" hidden
-            >View seller profile ↗</a
-          >
+        <!-- Web intelligence -->
+        <div class="webintel-card">
+          <div class="card-head">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+              <path d="M3.6 9h16.8" />
+              <path d="M3.6 15h16.8" />
+              <path d="M11.5 3a17 17 0 0 0 0 18" />
+              <path d="M12.5 3a17 17 0 0 1 0 18" />
+            </svg>
+            <span>Web intelligence</span>
+          </div>
+          <p id="webintel" class="card-body"></p>
+          <a id="profile-link" class="profile-link" href="#" target="_blank" hidden>
+            <span>View seller profile</span>
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M17 7l-10 10" />
+              <path d="M8 7l9 0l0 9" />
+            </svg>
+          </a>
         </div>
 
-        <p id="sources" class="sources"></p>
+        <!-- Footer -->
+        <footer class="report-footer">
+          <p id="sources" class="sources"></p>
+          <p class="powered">Powered by Exa + OpenAI</p>
+        </footer>
       </section>
     </main>
-
-    <footer class="page-footer">Powered by Exa + OpenAI</footer>
 
     <script src="report.js"></script>
   </body>

@@ -5,10 +5,11 @@ const els = {
   error: document.getElementById("error"),
   errorSub: document.getElementById("error-sub"),
   report: document.getElementById("report"),
+  hero: document.getElementById("hero"),
   sellerName: document.getElementById("seller-name"),
-  trustBadge: document.getElementById("trust-badge"),
-  trustEmoji: document.getElementById("trust-emoji"),
   trustLabel: document.getElementById("trust-label"),
+  scoreNum: document.getElementById("score-num"),
+  scoreArc: document.getElementById("score-arc"),
   headline: document.getElementById("headline"),
   stats: document.getElementById("stats"),
   activity: document.getElementById("activity"),
@@ -19,46 +20,17 @@ const els = {
   profileLink: document.getElementById("profile-link"),
 };
 
-// --- Icon selection by keyword (keeps the report pictorial) ---
-function pickIcon(text, kind) {
-  const t = (text || "").toLowerCase();
-  if (kind === "pos") {
-    if (/deliver|ship|fast|quick|prompt|speed/.test(t)) return "🚚";
-    if (/quality|condition|genuine|authentic|original|as described|accurate|good product/.test(t)) return "✨";
-    if (/communica|respons|reply|replies|friendly|polite|helpful|patient|nice/.test(t)) return "💬";
-    if (/price|cheap|value|deal|afford|worth|reasonable/.test(t)) return "🏷️";
-    if (/packag|wrap|protect/.test(t)) return "📦";
-    if (/trust|recommend|reliable|honest|legit/.test(t)) return "🤝";
-    if (/refund|payment|secure|safe/.test(t)) return "💳";
-    if (/meet|punctual|on time/.test(t)) return "⏰";
-    return "✅";
-  }
-  if (kind === "neg") {
-    if (/late|slow|delay|wait/.test(t)) return "🐌";
-    if (/no response|ghost|ignore|unrespons|no reply|slow reply/.test(t)) return "👻";
-    if (/damage|defect|broken|faulty|not as described|misleading|wrong item/.test(t)) return "🛠️";
-    if (/fake|counterfeit|replica|scam|fraud/.test(t)) return "❌";
-    if (/overpric|expensive|hidden fee|extra charge/.test(t)) return "💸";
-    if (/cancel|no show|noshow|backout|back out/.test(t)) return "🚫";
-    if (/rude|impolite|aggressive/.test(t)) return "😠";
-    return "⚠️";
-  }
-  if (kind === "flag") {
-    if (/payment|deposit|upfront|transfer|paynow|bank/.test(t)) return "💳";
-    if (/off.?platform|whatsapp|telegram|external|redirect/.test(t)) return "📵";
-    if (/new account|recently|no review|few review/.test(t)) return "🆕";
-    if (/price|too good|cheap|below market/.test(t)) return "🎣";
-    if (/image|photo|stock|stolen/.test(t)) return "🖼️";
-    return "🚩";
-  }
-  // tips
-  if (/meet|in person|public|face/.test(t)) return "🤝";
-  if (/payment|cash|pay on|cod|escrow/.test(t)) return "💵";
-  if (/inspect|check|verify|test/.test(t)) return "🔍";
-  if (/platform|carousell|in.?app|protection/.test(t)) return "🛡️";
-  if (/avoid|don'?t|never/.test(t)) return "🚫";
-  return "🛡️";
-}
+// Inline Tabler outline icons (extension page runs offline under a strict CSP).
+const ICONS = {
+  sparkles:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 18a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2z" /><path d="M16 6a2 2 0 0 1 2 2a2 2 0 0 1 2 -2a2 2 0 0 1 -2 -2a2 2 0 0 1 -2 2z" /><path d="M9 18a6 6 0 0 1 6 -6a6 6 0 0 1 -6 -6a6 6 0 0 1 -6 6a6 6 0 0 1 6 6z" /></svg>',
+  alert:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z" /><path d="M12 16h.01" /></svg>',
+  flag:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a5 5 0 0 1 7 0a5 5 0 0 0 7 0v9a5 5 0 0 1 -7 0a5 5 0 0 0 -7 0v-9z" /><path d="M5 21v-7" /></svg>',
+  search:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>',
+};
 
 // --- Normalize list items that may be strings or {label, detail} ---
 function normItem(item) {
@@ -66,6 +38,13 @@ function normItem(item) {
   if (typeof item === "string") return { label: item, detail: "" };
   return { label: item.label || item.text || "", detail: item.detail || "" };
 }
+
+const KIND_META = {
+  pos: { icon: ICONS.sparkles, tone: "tone-success" },
+  neg: { icon: ICONS.alert, tone: "tone-warning" },
+  flag: { icon: ICONS.flag, tone: "tone-danger" },
+  tip: { icon: ICONS.search, tone: "tone-accent" },
+};
 
 function renderTiles(containerId, sectionId, items, kind) {
   const container = document.getElementById(containerId);
@@ -79,25 +58,31 @@ function renderTiles(containerId, sectionId, items, kind) {
     return;
   }
   section.hidden = false;
-  const tileClass = { pos: "tile-pos", neg: "tile-neg", flag: "tile-flag", tip: "tile-tip" }[kind];
+  const meta = KIND_META[kind] || KIND_META.tip;
   for (const it of arr) {
-    const tile = document.createElement("div");
-    tile.className = `tile ${tileClass}`;
+    const card = document.createElement("div");
+    card.className = "content-card";
+
     const icon = document.createElement("div");
-    icon.className = "tile-icon";
-    icon.textContent = pickIcon(it.label + " " + it.detail, kind);
-    const label = document.createElement("div");
-    label.className = "tile-label";
-    label.textContent = it.label;
-    tile.appendChild(icon);
-    tile.appendChild(label);
+    icon.className = `card-icon ${meta.tone}`;
+    icon.innerHTML = meta.icon;
+
+    const text = document.createElement("div");
+    text.className = "card-text";
+    const title = document.createElement("p");
+    title.className = "card-title";
+    title.textContent = it.label;
+    text.appendChild(title);
     if (it.detail) {
-      const detail = document.createElement("div");
-      detail.className = "tile-detail";
-      detail.textContent = it.detail;
-      tile.appendChild(detail);
+      const sub = document.createElement("p");
+      sub.className = "card-subtitle";
+      sub.textContent = it.detail;
+      text.appendChild(sub);
     }
-    container.appendChild(tile);
+
+    card.appendChild(icon);
+    card.appendChild(text);
+    container.appendChild(card);
   }
 }
 
@@ -156,23 +141,23 @@ function renderPresence(presence) {
     tile.target = "_blank";
     tile.rel = "noopener noreferrer";
 
-    const icon = document.createElement("div");
+    const icon = document.createElement("span");
     icon.className = "tile-icon";
     icon.textContent = meta.icon;
 
-    const label = document.createElement("div");
+    const label = document.createElement("span");
     label.className = "tile-label";
     label.textContent = meta.label;
 
     const confEl = document.createElement("span");
     confEl.className = `tile-conf conf-${["high", "medium", "low"].includes(conf) ? conf : "low"}`;
-    confEl.textContent = `${conf} confidence`;
+    confEl.textContent = conf;
 
     tile.appendChild(icon);
     tile.appendChild(label);
     tile.appendChild(confEl);
     if (p.note) {
-      const note = document.createElement("div");
+      const note = document.createElement("span");
       note.className = "tile-detail";
       note.textContent = p.note;
       tile.appendChild(note);
@@ -182,10 +167,18 @@ function renderPresence(presence) {
 }
 
 const TRUST = {
-  trusted: { label: "Trusted", emoji: "🟢", cls: "trust-trusted" },
-  mixed: { label: "Mixed", emoji: "🟡", cls: "trust-mixed" },
-  risky: { label: "Risky", emoji: "🔴", cls: "trust-risky" },
-  unknown: { label: "Unknown", emoji: "⚪", cls: "trust-unknown" },
+  trusted: { label: "Trusted", cls: "trust-trusted" },
+  mixed: { label: "Mixed", cls: "trust-mixed" },
+  risky: { label: "Risky", cls: "trust-risky" },
+  unknown: { label: "Unknown", cls: "trust-unknown" },
+};
+
+// Verdict tone (gauge stroke + status pill) by trust level.
+const TONE = {
+  trusted: { color: "#16a34a", border: "#86efac" },
+  mixed: { color: "#d97706", border: "#fcd34d" },
+  risky: { color: "#dc2626", border: "#fca5a5" },
+  unknown: { color: "#6b7280", border: "#d1d5db" },
 };
 
 function showError(msg) {
@@ -193,6 +186,18 @@ function showError(msg) {
   els.report.hidden = true;
   els.error.hidden = false;
   els.errorSub.textContent = msg || "Could not build a seller report. Please try again.";
+}
+
+function animateGauge(score) {
+  if (!els.scoreArc) return;
+  els.scoreArc.style.strokeDashoffset = "170";
+  if (!Number.isFinite(score)) return;
+  const target = Math.round(170 - (score / 100) * 170);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      els.scoreArc.style.strokeDashoffset = String(target);
+    });
+  });
 }
 
 function renderReport(report, listing) {
@@ -203,12 +208,17 @@ function renderReport(report, listing) {
 
   els.sellerName.textContent = report.sellerUsername || listing.sellerUsername || "Seller";
 
-  const trust = TRUST[(report.trustLevel || "unknown").toLowerCase()] || TRUST.unknown;
-  els.trustBadge.className = `trust-badge ${trust.cls}`;
-  els.trustEmoji.textContent = trust.emoji;
-  // Show the same score as the sidebar verdict so the two views clearly agree.
-  els.trustLabel.textContent =
-    Number.isFinite(report.score) ? `${trust.label} · ${report.score}/100` : trust.label;
+  const level = (report.trustLevel || "unknown").toLowerCase();
+  const trust = TRUST[level] || TRUST.unknown;
+  const tone = TONE[level] || TONE.unknown;
+  els.hero.style.setProperty("--tone", tone.color);
+  els.hero.style.setProperty("--tone-border", tone.border);
+  els.trustLabel.textContent = trust.label;
+
+  // Score gauge — same score as the sidebar verdict so the views agree.
+  const hasScore = Number.isFinite(report.score);
+  const score = hasScore ? Math.max(0, Math.min(100, Math.round(report.score))) : null;
+  els.scoreNum.textContent = hasScore ? String(score) : "—";
 
   els.headline.textContent = report.headline || "";
 
@@ -247,6 +257,9 @@ function renderReport(report, listing) {
   els.loading.hidden = true;
   els.error.hidden = true;
   els.report.hidden = false;
+
+  // Animate after the report is visible so the transition runs.
+  animateGauge(score);
 }
 
 function escapeHtml(s) {
