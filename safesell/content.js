@@ -172,6 +172,7 @@
   function findSeller() {
     const out = {
       sellerUsername: "",
+      sellerHandle: "",
       sellerJoinDate: "",
       sellerReviews: "",
       sellerRating: "",
@@ -199,6 +200,7 @@
       const handleMatch = href.match(/\/u\/([^/]+)/);
       const handle = handleMatch ? decodeURIComponent(handleMatch[1]) : "";
       const text = textOf(profileLink);
+      out.sellerHandle = handle;
       // Use the display name when it's meaningful; otherwise fall back to the
       // URL handle so we never label the seller with a category name.
       out.sellerUsername = text && !GENERIC.test(text) && text.length <= 40 ? text : handle;
