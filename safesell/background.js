@@ -530,7 +530,8 @@ Set "trustLevel" to "${forcedTrust}" and make your headline/assessment consisten
   const userPrompt = `Produce a comprehensive trust report on this Carousell seller. Return ONLY the JSON object described at the end.
 ${verdictContext}
 SELLER:
-Username: ${listing.sellerUsername || "unknown"}
+Display name: ${listing.sellerUsername || "unknown"}
+Carousell handle: ${sellerHandleFromListing(listing) || "unknown"}
 Joined: ${listing.sellerJoinDate || "unknown"}
 Reviews count: ${listing.sellerReviews || "unknown"}
 Star rating: ${listing.sellerRating || "unknown"}
@@ -661,7 +662,7 @@ async function serpFootprint(handle, name, serpKey) {
 
 async function exaFootprint(handle, name, exaKey) {
   if (!exaKey) throw new Error("Missing Exa API key");
-  const query = `${name || ""} ${handle || ""} social media profile (instagram linkedin tiktok twitter)`.trim();
+  const query = `${handle || name} ${name && name !== handle ? name : ""} instagram github linkedin social profile`.trim();
   const res = await fetchWithTimeout("https://api.exa.ai/search", {
     method: "POST",
     headers: { "x-api-key": exaKey, "Content-Type": "application/json" },
@@ -706,7 +707,9 @@ async function instagramProbe(handle) {
     });
     if (!res.ok) return null;
     const html = await res.text();
-    const og = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i);
+    const og =
+      html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i) ||
+      html.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:title"/i);
     if (!og) return null;
     return {
       platform: "instagram",
@@ -719,10 +722,58 @@ async function instagramProbe(handle) {
   }
 }
 
+// Carousell profile URLs are /u/<handle>/ — use that for footprint probes, not
+// the display name (e.g. "yu zher" vs handle "yuzherng").
+function sellerHandleFromListing(listing) {
+  if (listing?.sellerHandle) return String(listing.sellerHandle).trim();
+  const url = listing?.sellerProfileUrl || "";
+  const match = url.match(/\/u\/([^/?#]+)/i);
+  if (match) return decodeURIComponent(match[1]).trim();
+  return String(listing?.sellerUsername || "").trim();
+}
+
+function mergeDirectFootprint(webPresence, footprintCandidates) {
+  const presence = {
+    ...(webPresence && typeof webPresence === "object" ? webPresence : {}),
+    platforms: Array.isArray(webPresence?.platforms) ? [...webPresence.platforms] : [],
+  };
+  const seen = new Set(
+    presence.platforms.filter((p) => p && p.url).map((p) => `${p.platform}|${p.url}`)
+  );
+
+  for (const c of footprintCandidates || []) {
+    if (!c?.url || c.source !== "direct") continue;
+    const key = `${c.platform}|${c.url}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    presence.platforms.push({
+      platform: c.platform,
+      url: c.url,
+      confidence: "high",
+      note: c.snippet
+        ? String(c.snippet).slice(0, 120)
+        : "Exact handle match via direct profile lookup",
+    });
+  }
+
+  const count = presence.platforms.length;
+  if (count >= 3) presence.identitySignal = presence.identitySignal || "strong";
+  else if (count >= 2) presence.identitySignal = presence.identitySignal || "some";
+  else if (count >= 1) presence.identitySignal = presence.identitySignal || "weak";
+
+  if (!presence.summary && count > 0) {
+    presence.summary = "Matching public profiles were found on other platforms.";
+  }
+
+  return presence;
+}
+
 async function collectFootprint(listing, keys) {
-  const handle = (listing.sellerUsername || "").trim();
-  const name = (listing.sellerUsername || "").trim(); // display name == username on listing
+  const handle = sellerHandleFromListing(listing);
+  const name = (listing.sellerUsername || handle).trim();
   if (!handle && !name) return [];
+
+  console.debug("[SafeOrScam] footprint lookup handle:", handle, "display:", name);
 
   const outcomes = await Promise.allSettled([
     serpFootprint(handle, name, keys.serp),
@@ -783,6 +834,17 @@ async function generateSellerReport(listing, verdict) {
     footprintCandidates
   );
 
+  const handle = sellerHandleFromListing(listing);
+  const webPresence = mergeDirectFootprint(report.webPresence, footprintCandidates);
+  if (footprintCandidates.length) {
+    console.debug(
+      "[SafeOrScam] footprint candidates:",
+      footprintCandidates.length,
+      "platforms in report:",
+      (webPresence.platforms || []).length
+    );
+  }
+
   // Force the trust level to agree with the sidebar verdict when we have one,
   // so the two views never show conflicting seller statuses.
   const vScore = scoreOf(verdict);
@@ -790,6 +852,7 @@ async function generateSellerReport(listing, verdict) {
 
   return {
     ...report,
+    webPresence,
     trustLevel: forcedTrust || report.trustLevel || "unknown",
     score: vScore,
     verdict: verdict ? verdict.verdict : undefined,
