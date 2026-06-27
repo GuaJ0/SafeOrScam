@@ -101,6 +101,86 @@ function renderTiles(containerId, sectionId, items, kind) {
   }
 }
 
+const PLATFORM_META = {
+  instagram: { icon: "📸", label: "Instagram" },
+  linkedin: { icon: "💼", label: "LinkedIn" },
+  twitter: { icon: "🐦", label: "X / Twitter" },
+  tiktok: { icon: "🎵", label: "TikTok" },
+  facebook: { icon: "👤", label: "Facebook" },
+  github: { icon: "💻", label: "GitHub" },
+  marketplace: { icon: "🛍️", label: "Marketplace" },
+  website: { icon: "🌐", label: "Website" },
+};
+
+const SIGNAL_META = {
+  strong: { label: "Strong identity", cls: "signal-strong" },
+  some: { label: "Some presence", cls: "signal-some" },
+  weak: { label: "Weak presence", cls: "signal-weak" },
+  none: { label: "No match found", cls: "signal-none" },
+};
+
+function renderPresence(presence) {
+  const section = document.getElementById("sec-presence");
+  const grid = document.getElementById("presence-grid");
+  const signalEl = document.getElementById("presence-signal");
+  const summaryEl = document.getElementById("presence-summary");
+  grid.innerHTML = "";
+
+  const platforms = (presence && Array.isArray(presence.platforms) ? presence.platforms : []).filter(
+    (p) => p && p.url && PLATFORM_META[p.platform]
+  );
+  const signalKey = (presence && presence.identitySignal) || (platforms.length ? "some" : "none");
+
+  // Hide the whole section only when there's truly nothing to say.
+  if (!platforms.length && (!presence || !presence.summary) && signalKey === "none") {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+
+  const sig = SIGNAL_META[signalKey] || SIGNAL_META.none;
+  signalEl.textContent = sig.label;
+  signalEl.className = `presence-pill ${sig.cls}`;
+  summaryEl.textContent =
+    (presence && presence.summary) ||
+    (platforms.length
+      ? "Matching public profiles were found on other platforms."
+      : "No matching public profiles were found — not necessarily suspicious.");
+
+  for (const p of platforms) {
+    const meta = PLATFORM_META[p.platform];
+    const conf = (p.confidence || "low").toLowerCase();
+    const tile = document.createElement("a");
+    tile.className = "tile tile-presence";
+    tile.href = p.url;
+    tile.target = "_blank";
+    tile.rel = "noopener noreferrer";
+
+    const icon = document.createElement("div");
+    icon.className = "tile-icon";
+    icon.textContent = meta.icon;
+
+    const label = document.createElement("div");
+    label.className = "tile-label";
+    label.textContent = meta.label;
+
+    const confEl = document.createElement("span");
+    confEl.className = `tile-conf conf-${["high", "medium", "low"].includes(conf) ? conf : "low"}`;
+    confEl.textContent = `${conf} confidence`;
+
+    tile.appendChild(icon);
+    tile.appendChild(label);
+    tile.appendChild(confEl);
+    if (p.note) {
+      const note = document.createElement("div");
+      note.className = "tile-detail";
+      note.textContent = p.note;
+      tile.appendChild(note);
+    }
+    grid.appendChild(tile);
+  }
+}
+
 const TRUST = {
   trusted: { label: "Trusted", emoji: "🟢", cls: "trust-trusted" },
   mixed: { label: "Mixed", emoji: "🟡", cls: "trust-mixed" },
@@ -147,6 +227,7 @@ function renderReport(report, listing) {
   renderTiles("complaints", "sec-complaints", trends.complaints, "neg");
   renderTiles("redflags", "sec-redflags", report.redFlags, "flag");
   renderTiles("tips", "sec-tips", report.safetyTips, "tip");
+  renderPresence(report.webPresence);
 
   els.activity.textContent = report.activity || "No activity details available.";
   els.assessment.textContent = report.assessment || "No assessment available.";

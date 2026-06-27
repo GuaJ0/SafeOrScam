@@ -157,17 +157,18 @@ async function runOpenAICheck(listing, exaSummary, imageResult, openaiKey) {
   const systemPrompt =
     "You are a scam detection expert for Carousell, a major online marketplace in Southeast Asia. " +
     "Analyze listing data and return a structured JSON verdict. Be concise, specific, and accurate.\n\n" +
-    "SCORING GUIDE — use the full 0–100 range:\n" +
-    "85–100: Clearly legitimate. Established seller, fair price, real photos, detailed description.\n" +
-    "65–84: Likely safe. Minor unknowns (new seller, few reviews) but nothing suspicious.\n" +
-    "40–64: Genuine caution warranted. Multiple weak signals: new account, vague description, price slightly low.\n" +
-    "20–39: Probably a scam. Stock/stolen images, price well below market, suspicious seller history.\n" +
-    "0–19: Almost certainly a scam. Stock photos confirmed, price >50% below market, new account, no reviews.\n\n" +
+    "SCORING GUIDE — the score is a TRUST/SAFETY score where 100 = very safe and 0 = almost certainly a scam. Higher is better. Use the full 0–100 range:\n" +
+    "80–100: Clearly legitimate. Strong trust signals: established seller, good reviews/rating, fair price, original photos, detailed description.\n" +
+    "60–79: Looks fine. This is the DEFAULT for an ordinary listing. Limited information (new seller, few/no reviews, average description) belongs here as long as there are NO concrete red flags.\n" +
+    "40–59: Mixed. At least one genuine, concrete concern (e.g. price clearly below market, reused images, a real complaint/scam mention) alongside some reassurance.\n" +
+    "20–39: Probably a scam. Several concrete red flags: stock/stolen images, price well below market, suspicious history, payment-redirect requests.\n" +
+    "0–19: Almost certainly a scam. Confirmed stock photos, price >50% below market, brand-new account, known scam reports.\n\n" +
+    "IMPORTANT — do NOT be overly punishing. Missing information is NOT itself a scam signal. A new account, few reviews, or a short description, on their own, should score in the 60–79 range, NOT the caution band. Only drop below 60 when there is at least one CONCRETE risk signal. When in doubt with no real red flags, lean toward 70.\n\n" +
     "EXAMPLES:\n" +
-    '{"verdict":"SAFE","score":90,"reasons":["Seller has 200+ reviews and 4.9 rating","Price matches market","Original photos with receipt visible"],"scamType":"none","sellerRisk":"low","imageRisk":"low"}\n' +
-    '{"verdict":"SAFE","score":72,"reasons":["Seller joined 6 months ago with 3 reviews","Price is fair","Photos appear genuine"],"scamType":"none","sellerRisk":"low","imageRisk":"low"}\n' +
-    '{"verdict":"CAUTION","score":52,"reasons":["Seller joined last week with no reviews","Price 20% below market","Description is very brief"],"scamType":"none","sellerRisk":"medium","imageRisk":"low"}\n' +
-    '{"verdict":"SCAM","score":18,"reasons":["Image found on stock photo site","Price 60% below market","Account created 2 days ago"],"scamType":"stolen images","sellerRisk":"high","imageRisk":"high"}';
+    '{"verdict":"SAFE","score":92,"reasons":["Seller has 200+ reviews and 4.9 rating","Price matches market","Original photos with receipt visible"],"scamType":"none","sellerRisk":"low","imageRisk":"low"}\n' +
+    '{"verdict":"SAFE","score":74,"reasons":["Newer seller with only a few reviews, but nothing concerning","Price is fair for the item","Photos look genuine and original"],"scamType":"none","sellerRisk":"low","imageRisk":"low"}\n' +
+    '{"verdict":"CAUTION","score":48,"reasons":["Price is ~30% below typical market rate","Brand-new account with no reviews","Description is unusually brief for the item"],"scamType":"none","sellerRisk":"medium","imageRisk":"low"}\n' +
+    '{"verdict":"SCAM","score":15,"reasons":["Image found on a stock photo site","Price 60% below market","Account created 2 days ago"],"scamType":"stolen images","sellerRisk":"high","imageRisk":"high"}';
 
   const userPrompt = `Analyze this Carousell listing for scam risk and return ONLY valid JSON.
 
@@ -411,32 +412,41 @@ async function exaSellerIntel(listing, exaKey) {
 
 // Map the listing verdict (the number shown in the sidebar) to a seller
 // trust level so the two views can never contradict each other.
+// NOTE: score is a TRUST/SAFETY score — higher is better (100 = safe, 0 = scam).
 function scoreOf(verdict) {
   if (!verdict) return null;
   if (Number.isFinite(verdict.score)) return Math.max(0, Math.min(100, verdict.score));
-  if (verdict.verdict === "SCAM") return 85;
-  if (verdict.verdict === "SAFE") return 15;
+  if (verdict.verdict === "SCAM") return 15;
+  if (verdict.verdict === "SAFE") return 85;
   if (verdict.verdict === "CAUTION") return 50;
   return null;
 }
+// Thresholds mirror the sidebar badge (>=65 safe/green, 40-64 caution/amber, <40 scam/red).
 function trustFromScore(score) {
   if (score == null) return null;
-  if (score >= 70) return "risky";
+  if (score >= 65) return "trusted";
   if (score >= 40) return "mixed";
-  return "trusted";
+  return "risky";
 }
 
-async function sellerReportOpenAI(listing, profile, exaIntel, openaiKey, verdict) {
+async function sellerReportOpenAI(listing, profile, exaIntel, openaiKey, verdict, footprintCandidates) {
   if (!openaiKey) throw new Error("Missing OpenAI API key");
+
+  const footprintBlock =
+    footprintCandidates && footprintCandidates.length
+      ? footprintCandidates
+          .map((c, i) => `${i + 1}. [${c.platform}] ${c.url}${c.snippet ? ` — ${c.snippet}` : ""} (via ${c.source})`)
+          .join("\n")
+      : "No candidate profiles were found on other platforms.";
 
   const vScore = scoreOf(verdict);
   const forcedTrust = trustFromScore(vScore);
   const verdictContext =
     vScore != null
       ? `\nALREADY-COMPUTED LISTING VERDICT (you MUST stay consistent with this):
-Overall verdict: ${verdict.verdict} (risk score ${vScore}/100)
+Overall verdict: ${verdict.verdict} — trust/safety score ${vScore}/100 (higher = safer; 100 = very safe, 0 = scam)
 Seller risk: ${verdict.sellerRisk || "unknown"}, Image risk: ${verdict.imageRisk || "unknown"}
-Set "trustLevel" to "${forcedTrust}" and make your headline/assessment consistent with this risk level. Do NOT call the seller "trusted" if the verdict is CAUTION or SCAM.\n`
+Set "trustLevel" to "${forcedTrust}" and make your headline/assessment consistent with this. Only call the seller "trusted" when the score is 65+; if the score is below 40, treat them as risky.\n`
       : "";
 
   const systemPrompt =
@@ -476,6 +486,11 @@ ${reviewMaterial}
 WEB INTELLIGENCE (Exa search on this seller):
 ${exaIntel || "No web intelligence available."}
 
+CANDIDATE PROFILES ON OTHER PLATFORMS (found by searching the seller's handle/name — may include false matches for common names):
+${footprintBlock}
+
+For "webPresence": decide which candidate profiles plausibly belong to THIS seller (same name/handle, consistent location like Singapore, or matching niche such as the listing's product type). Assign a confidence to each. A consistent presence across multiple platforms is a mild positive credibility signal; absence is NOT itself suspicious (many legitimate people are private). Never let web presence alone mark someone as a scam.
+
 Return ONLY this JSON structure, no other text:
 {
   "headline": "<one-sentence overall take on this seller>",
@@ -490,6 +505,13 @@ Return ONLY this JSON structure, no other text:
   "webIntel": "<1-2 sentences summarizing notable online mentions, scam reports, or 'No notable mentions found online.'>",
   "redFlags": [{ "label": "<2-5 word red flag>", "detail": "<short supporting phrase>" }],
   "safetyTips": [{ "label": "<2-5 word tip>", "detail": "<short supporting phrase>" }],
+  "webPresence": {
+    "identitySignal": "strong" | "some" | "weak" | "none",
+    "summary": "<1 short sentence on the seller's cross-platform presence>",
+    "platforms": [
+      { "platform": "instagram|linkedin|twitter|tiktok|facebook|github|marketplace|website", "url": "<profile url>", "confidence": "high" | "medium" | "low", "note": "<why it likely matches this seller>" }
+    ]
+  },
   "evidenceQuality": "strong" | "moderate" | "weak"
 }
 
@@ -516,14 +538,169 @@ Keep every "label" to 2-5 words so it can be shown as an icon tile. Put any long
   return parseVerdict(data?.choices?.[0]?.message?.content || "");
 }
 
+// ---------------------------------------------------------------------------
+// Digital footprint — does this seller's identity exist on other platforms?
+// A consistent cross-platform presence is a soft credibility signal.
+// ---------------------------------------------------------------------------
+
+// Classify a URL into a known platform bucket (or null if irrelevant).
+function classifyPlatform(url) {
+  const u = (url || "").toLowerCase();
+  if (/(^|\.)instagram\.com\//.test(u)) return "instagram";
+  if (/(^|\.)linkedin\.com\/(in|pub|company)\//.test(u)) return "linkedin";
+  if (/(^|\.)(twitter|x)\.com\//.test(u)) return "twitter";
+  if (/(^|\.)tiktok\.com\//.test(u)) return "tiktok";
+  if (/(^|\.)facebook\.com\//.test(u)) return "facebook";
+  if (/(^|\.)github\.com\//.test(u)) return "github";
+  if (/(^|\.)(depop|etsy|ebay|shopee|mercari|poshmark|grailed|reverb|vinted)\./.test(u))
+    return "marketplace";
+  return null;
+}
+
+// Pull profile-ish links out of a search engine result set.
+function harvestLinks(items, getUrl, getSnippet) {
+  const out = [];
+  for (const it of items || []) {
+    const url = getUrl(it);
+    if (!url) continue;
+    const platform = classifyPlatform(url);
+    if (!platform) continue;
+    out.push({ platform, url, snippet: (getSnippet(it) || "").slice(0, 200), source: "search" });
+  }
+  return out;
+}
+
+async function serpFootprint(handle, name, serpKey) {
+  if (!serpKey) throw new Error("Missing SerpAPI key");
+  const queries = [];
+  if (name) queries.push(`"${name}" (instagram OR linkedin OR tiktok OR twitter OR facebook OR depop OR etsy)`);
+  if (handle && handle !== name) queries.push(`"${handle}" profile`);
+  if (!queries.length) return [];
+
+  const runs = await Promise.allSettled(
+    queries.map((q) =>
+      fetchWithTimeout(
+        `https://serpapi.com/search.json?engine=google&num=20&q=${encodeURIComponent(q)}&api_key=${encodeURIComponent(serpKey)}`
+      ).then(async (r) => {
+        if (!r.ok) throw new Error(`SerpAPI ${r.status}`);
+        return r.json();
+      })
+    )
+  );
+
+  const links = [];
+  for (const run of runs) {
+    if (run.status !== "fulfilled") continue;
+    links.push(
+      ...harvestLinks(run.value.organic_results, (it) => it.link, (it) => it.snippet)
+    );
+  }
+  return links;
+}
+
+async function exaFootprint(handle, name, exaKey) {
+  if (!exaKey) throw new Error("Missing Exa API key");
+  const query = `${name || ""} ${handle || ""} social media profile (instagram linkedin tiktok twitter)`.trim();
+  const res = await fetchWithTimeout("https://api.exa.ai/search", {
+    method: "POST",
+    headers: { "x-api-key": exaKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ query, numResults: 10, useAutoprompt: true, contents: { text: true } }),
+  });
+  if (!res.ok) throw new Error(`Exa ${res.status}`);
+  const data = await res.json();
+  return harvestLinks(
+    data.results,
+    (it) => it.url,
+    (it) => (it.text || it.title || "")
+  );
+}
+
+// Direct probe: GitHub's public API is bot-friendly and gives a clean signal.
+async function githubProbe(handle) {
+  if (!handle) return null;
+  const clean = handle.replace(/[^a-zA-Z0-9-]/g, "");
+  if (!clean) return null;
+  const res = await fetchWithTimeout(`https://api.github.com/users/${encodeURIComponent(clean)}`, {
+    headers: { Accept: "application/vnd.github+json" },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return {
+    platform: "github",
+    url: data.html_url,
+    snippet: [data.name, data.bio, data.location].filter(Boolean).join(" · ").slice(0, 200),
+    source: "direct",
+  };
+}
+
+// Direct probe: Instagram still exposes og:title (name + @handle) on public
+// profile pages even behind the login wall. Best-effort — may be rate-limited.
+async function instagramProbe(handle) {
+  if (!handle) return null;
+  const clean = handle.replace(/[^a-zA-Z0-9._]/g, "");
+  if (!clean) return null;
+  try {
+    const res = await fetchWithTimeout(`https://www.instagram.com/${encodeURIComponent(clean)}/`, {
+      headers: { Accept: "text/html" },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const og = html.match(/<meta[^>]+property="og:title"[^>]+content="([^"]+)"/i);
+    if (!og) return null;
+    return {
+      platform: "instagram",
+      url: `https://www.instagram.com/${clean}/`,
+      snippet: og[1].slice(0, 200),
+      source: "direct",
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+async function collectFootprint(listing, keys) {
+  const handle = (listing.sellerUsername || "").trim();
+  const name = (listing.sellerUsername || "").trim(); // display name == username on listing
+  if (!handle && !name) return [];
+
+  const outcomes = await Promise.allSettled([
+    serpFootprint(handle, name, keys.serp),
+    exaFootprint(handle, name, keys.exa),
+    githubProbe(handle),
+    instagramProbe(handle),
+  ]);
+
+  const candidates = [];
+  for (const o of outcomes) {
+    if (o.status !== "fulfilled" || !o.value) continue;
+    if (Array.isArray(o.value)) candidates.push(...o.value);
+    else candidates.push(o.value);
+  }
+
+  // Dedupe by platform+url, prefer direct probes over search hits.
+  const seen = new Map();
+  for (const c of candidates) {
+    const key = `${c.platform}|${c.url}`;
+    if (!seen.has(key) || c.source === "direct") seen.set(key, c);
+  }
+  return Array.from(seen.values()).slice(0, 25);
+}
+
 async function generateSellerReport(listing, verdict) {
   const keys = await getKeys();
 
-  // Profile fetch + Exa intel run in parallel; either may fail independently.
-  const [profileOutcome, exaOutcome] = await Promise.allSettled([
+  // Profile fetch + Exa intel + cross-platform footprint all run in parallel;
+  // each may fail independently.
+  const [profileOutcome, exaOutcome, footprintOutcome] = await Promise.allSettled([
     fetchSellerProfile(listing),
     exaSellerIntel(listing, keys.exa),
+    collectFootprint(listing, keys),
   ]);
+
+  const footprintCandidates =
+    footprintOutcome.status === "fulfilled" ? footprintOutcome.value : [];
+  if (footprintOutcome.status === "rejected")
+    console.warn("SafeSell: footprint collection failed:", footprintOutcome.reason);
 
   const profile =
     profileOutcome.status === "fulfilled"
@@ -536,7 +713,14 @@ async function generateSellerReport(listing, verdict) {
   if (exaOutcome.status === "rejected")
     console.warn("SafeSell: seller Exa failed:", exaOutcome.reason);
 
-  const report = await sellerReportOpenAI(listing, profile, exaIntel, keys.openai, verdict);
+  const report = await sellerReportOpenAI(
+    listing,
+    profile,
+    exaIntel,
+    keys.openai,
+    verdict,
+    footprintCandidates
+  );
 
   // Force the trust level to agree with the sidebar verdict when we have one,
   // so the two views never show conflicting seller statuses.
@@ -556,6 +740,7 @@ async function generateSellerReport(listing, verdict) {
     sources: {
       profilePage: profileOutcome.status === "fulfilled" && !!profile.pageText,
       webSearch: exaOutcome.status === "fulfilled",
+      footprint: footprintOutcome.status === "fulfilled" && footprintCandidates.length > 0,
     },
   };
 }
