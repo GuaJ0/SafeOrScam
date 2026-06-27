@@ -16,6 +16,8 @@
     "https://api.exa.ai/*",
     "https://serpapi.com/*",
     "https://*.supabase.co/*"
+    "https://api.github.com/*",
+    "https://www.instagram.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -94,5 +96,6 @@
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openai.com https://api.exa.ai https://serpapi.com https://*.carousell.com https://*.carousell.sg https://*.carousell.com.my https://*.carousell.ph https://*.carousell.com.hk https://*.carousell.tw https://*.carousell.co.id https://*.supabase.co"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openai.com https://api.exa.ai https://serpapi.com https://api.github.com https://www.instagram.com https://*.carousell.com https://*.carousell.sg https://*.carousell.com.my https://*.carousell.ph https://*.carousell.com.hk https://*.carousell.tw https://*.carousell.co.id"
   }
 }
