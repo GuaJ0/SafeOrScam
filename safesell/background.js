@@ -237,6 +237,56 @@ Write each reason like a knowledgeable friend giving you a straight, honest take
   return parseVerdict(content);
 }
 
+// ---------------------------------------------------------------------------
+// Check 4 — Alternative listings (Exa, only for CAUTION/SCAM verdicts)
+// ---------------------------------------------------------------------------
+async function runAlternativesSearch(listing, exaKey) {
+  if (!exaKey) throw new Error("Missing Exa API key");
+
+  // Strip condition/adjectives to get a cleaner item name for search.
+  const title = (listing.title || "").replace(/\b(brand new|like new|used|lightly used|well used|new)\b/gi, "").trim();
+  const query = `${title} for sale Singapore site:carousell.sg`;
+
+  const res = await fetchWithTimeout("https://api.exa.ai/search", {
+    method: "POST",
+    headers: { "x-api-key": exaKey, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query,
+      numResults: 6,
+      useAutoprompt: false,
+      includeDomains: ["carousell.sg"],
+      contents: { text: true, image: true, livecrawl: "fallback" },
+    }),
+  });
+  if (!res.ok) throw new Error(`Exa alternatives ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+
+  const priceRe = /(S?\$|SGD)\s?([\d,]+)/i;
+  const currentUrl = (listing.listingUrl || "").split("?")[0];
+
+  const alternatives = [];
+  for (const item of (data.results || [])) {
+    // Skip the listing itself.
+    if ((item.url || "").split("?")[0] === currentUrl) continue;
+    if (!/carousell\.sg\/p\//i.test(item.url || "")) continue;
+
+    const text = item.text || "";
+    const match = text.match(priceRe);
+    const price = match ? `S$${match[2]}` : null;
+
+    alternatives.push({
+      title: item.title || "Listing",
+      url: item.url,
+      price,
+      image: item.image || null,
+    });
+
+    if (alternatives.length >= 3) break;
+  }
+
+  return alternatives;
+}
+
 // Tolerant JSON parsing — strips code fences / stray prose around the object.
 function parseVerdict(raw) {
   let text = (raw || "").trim();
@@ -301,8 +351,18 @@ async function analyzeListing(listing) {
     imageRisk: imageResult && imageResult.foundOnStockSites ? "high" : "low",
   };
 
+  let alternatives = [];
+  if (base.verdict === "CAUTION" || base.verdict === "SCAM") {
+    try {
+      alternatives = await runAlternativesSearch(listing, keys.exa);
+    } catch (err) {
+      console.warn("SafeSell: alternatives search failed:", err);
+    }
+  }
+
   return {
     ...base,
+    alternatives,
     imageCheck: imageResult,
     exaAvailable: exaOutcome.status === "fulfilled",
     imageAvailable: imageOutcome.status === "fulfilled",
