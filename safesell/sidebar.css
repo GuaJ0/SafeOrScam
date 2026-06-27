@@ -253,6 +253,191 @@ body {
   color: var(--scam);
 }
 
+/* ---- Community ---- */
+.community-section {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.community-heading {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+.community-counts {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.community-counts[hidden] { display: none; }
+.safe-percent {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+.pct-safe { color: var(--safe); }
+.pct-caution { color: var(--caution); }
+.pct-scam { color: var(--scam); }
+.vote-total {
+  font-size: 12px;
+  color: var(--muted);
+}
+.community-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.community-comments[hidden] { display: none; }
+.community-comment {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
+.review-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.review-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.review-initials {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+}
+.review-body {
+  flex: 1;
+  min-width: 0;
+}
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+.review-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.review-verdict {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.review-text {
+  font-size: 12px;
+  color: #374151;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.vote-area { }
+.vote-area[hidden] { display: none; }
+.vote-prompt {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+.vote-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.vote-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--line);
+  background: #f9fafb;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  color: var(--ink);
+}
+.vote-btn:hover { border-color: #9ca3af; }
+.vote-safe.active { background: #f0fdf4; border-color: var(--safe); color: #15803d; }
+.vote-scam.active { background: #fff1f2; border-color: var(--scam); color: #b91c1c; }
+.comment-area { display: flex; flex-direction: column; gap: 6px; }
+.comment-area[hidden] { display: none; }
+.vote-comment {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-family: inherit;
+  resize: none;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.vote-comment:focus { border-color: #6b7280; }
+.submit-vote-btn {
+  padding: 8px 16px;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-end;
+}
+.submit-vote-btn:hover { opacity: 0.85; }
+.submit-vote-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.vote-status { font-size: 12px; margin-top: 6px; }
+.vote-status[hidden] { display: none; }
+.vote-status-ok { color: #16a34a; }
+.vote-status-error { color: var(--scam); }
+
+.auth-prompt {
+  text-align: center;
+  padding: 14px 10px;
+  background: #f9fafb;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.auth-prompt[hidden] { display: none; }
+.auth-prompt p {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.sign-in-btn {
+  padding: 8px 16px;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sign-in-btn:hover { opacity: 0.85; }
+
 .alternatives-section {
   margin-top: 20px;
 }

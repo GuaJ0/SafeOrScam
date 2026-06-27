@@ -209,6 +209,149 @@ window.addEventListener("message", (event) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Community voting
+// ---------------------------------------------------------------------------
+let currentListingUrl = null;
+let selectedVerdict = null;
+
+const communitySection = document.getElementById("community-section");
+const communityCounts = document.getElementById("community-counts");
+const communityComments = document.getElementById("community-comments");
+const voteArea = document.getElementById("vote-area");
+const authPrompt = document.getElementById("auth-prompt");
+const voteSafeBtn = document.getElementById("vote-safe-btn");
+const voteScamBtn = document.getElementById("vote-scam-btn");
+const commentArea = document.getElementById("comment-area");
+const voteCommentEl = document.getElementById("vote-comment");
+const submitVoteBtn = document.getElementById("submit-vote-btn");
+const voteStatus = document.getElementById("vote-status");
+const signInSidebarBtn = document.getElementById("sign-in-sidebar-btn");
+
+function setVoteStatus(msg, isError = false) {
+  voteStatus.textContent = msg;
+  voteStatus.className = "vote-status" + (isError ? " vote-status-error" : " vote-status-ok");
+  voteStatus.hidden = false;
+}
+
+function selectVerdict(verdict) {
+  selectedVerdict = verdict;
+  voteSafeBtn.classList.toggle("active", verdict === "safe");
+  voteScamBtn.classList.toggle("active", verdict === "scam");
+  commentArea.hidden = false;
+}
+
+voteSafeBtn.addEventListener("click", () => selectVerdict("safe"));
+voteScamBtn.addEventListener("click", () => selectVerdict("scam"));
+
+submitVoteBtn.addEventListener("click", async () => {
+  if (!selectedVerdict || !currentListingUrl) return;
+  submitVoteBtn.disabled = true;
+  submitVoteBtn.textContent = "Submitting…";
+
+  postToParent({
+    type: "SUBMIT_VOTE",
+    listingUrl: currentListingUrl,
+    verdict: selectedVerdict,
+    comment: voteCommentEl.value.trim(),
+  });
+});
+
+signInSidebarBtn.addEventListener("click", () => {
+  postToParent({ type: "SIGN_IN_GOOGLE" });
+});
+
+function renderCommunity({ safeCount, scamCount, safePercent, total, comments, myVote, user }) {
+  // Percentage summary
+  const countsEl = document.getElementById("community-counts");
+  const percentEl = document.getElementById("safe-percent");
+  const totalEl = document.getElementById("vote-total");
+  if (total > 0) {
+    percentEl.textContent = `${safePercent}% said safe`;
+    percentEl.className = "safe-percent " + (safePercent >= 60 ? "pct-safe" : safePercent >= 40 ? "pct-caution" : "pct-scam");
+    totalEl.textContent = `${total} ${total === 1 ? "review" : "reviews"}`;
+    countsEl.hidden = false;
+  } else {
+    countsEl.hidden = true;
+  }
+
+  // Comments — Google review style
+  communityComments.innerHTML = "";
+  if (comments && comments.length > 0) {
+    comments.forEach(({ comment, verdict, displayName, avatarUrl }) => {
+      const initials = (displayName || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+      const color = verdict === "safe" ? "#16a34a" : "#dc2626";
+      const div = document.createElement("div");
+      div.className = "community-comment";
+      div.innerHTML = `
+        <div class="review-avatar">
+          ${avatarUrl
+            ? `<img src="${avatarUrl}" alt="${initials}" onerror="this.parentElement.innerHTML='<span class=review-initials>${initials}</span>'">`
+            : `<span class="review-initials">${initials}</span>`
+          }
+        </div>
+        <div class="review-body">
+          <div class="review-header">
+            <span class="review-name">${displayName || "Anonymous"}</span>
+            <span class="review-verdict" style="color:${color}">${verdict === "safe" ? "✓ Safe" : "⚑ Scam"}</span>
+          </div>
+          <p class="review-text">${comment}</p>
+        </div>
+      `;
+      communityComments.appendChild(div);
+    });
+    communityComments.hidden = false;
+  } else {
+    communityComments.hidden = true;
+  }
+
+  if (!user) {
+    voteArea.hidden = true;
+    authPrompt.hidden = false;
+    return;
+  }
+
+  authPrompt.hidden = true;
+  voteArea.hidden = false;
+
+  // If user already voted, show their existing vote selected
+  if (myVote) {
+    selectVerdict(myVote);
+    setVoteStatus("You voted · change your vote below");
+  }
+}
+
+function loadCommunityData(listingUrl) {
+  if (!listingUrl) return;
+  postToParent({ type: "GET_VOTES", listingUrl });
+}
+
+// Handle vote result from content script
+window.addEventListener("message", (event) => {
+  const msg = event.data;
+  if (!msg || msg.source !== "safesell") return;
+
+  if (msg.type === "VOTE_RESULT") {
+    submitVoteBtn.disabled = false;
+    submitVoteBtn.textContent = "Submit";
+    if (msg.ok) {
+      setVoteStatus("Thanks for your report!");
+      loadCommunityData(currentListingUrl);
+    } else {
+      setVoteStatus(msg.error || "Failed to submit. Try again.", true);
+    }
+  }
+
+  if (msg.type === "VOTES_DATA") {
+    renderCommunity(msg);
+  }
+
+  if (msg.type === "LISTING_URL") {
+    currentListingUrl = msg.url;
+    loadCommunityData(msg.url);
+  }
+});
+
 // Initial state.
 showLoading();
 setExpandedWidth();

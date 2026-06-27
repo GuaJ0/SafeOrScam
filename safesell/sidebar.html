@@ -58,6 +58,36 @@
           </span>
         </div>
 
+        <!-- Community votes -->
+        <div id="community-section" class="community-section">
+          <p class="community-heading">Community</p>
+
+          <div id="community-counts" class="community-counts" hidden>
+            <span id="safe-percent" class="safe-percent"></span>
+            <span id="vote-total" class="vote-total"></span>
+          </div>
+
+          <div id="community-comments" class="community-comments" hidden></div>
+
+          <div id="vote-area" class="vote-area" hidden>
+            <p class="vote-prompt">What do you think?</p>
+            <div class="vote-buttons">
+              <button id="vote-safe-btn" class="vote-btn vote-safe">👍 Safe</button>
+              <button id="vote-scam-btn" class="vote-btn vote-scam">🚩 Scam</button>
+            </div>
+            <div id="comment-area" class="comment-area" hidden>
+              <textarea id="vote-comment" class="vote-comment" placeholder="Add a comment (optional)…" rows="2" maxlength="280"></textarea>
+              <button id="submit-vote-btn" class="submit-vote-btn">Submit</button>
+            </div>
+            <p id="vote-status" class="vote-status" hidden></p>
+          </div>
+
+          <div id="auth-prompt" class="auth-prompt" hidden>
+            <p>Sign in to vote and see community reports</p>
+            <button id="sign-in-sidebar-btn" class="sign-in-btn">Sign in with Google</button>
+          </div>
+        </div>
+
         <div id="alternatives-section" class="alternatives-section" hidden>
           <p class="alternatives-heading">Safer alternatives</p>
           <ul id="alternatives-list" class="alternatives-list"></ul>
