@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SafeSell — Settings</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        max-width: 560px;
+        margin: 40px auto;
+        padding: 0 24px;
+        color: #111827;
+      }
+      h1 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 22px;
+      }
+      .dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #22c55e;
+      }
+      p.intro {
+        color: #6b7280;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      label {
+        display: block;
+        margin-top: 20px;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      label small {
+        display: block;
+        font-weight: 400;
+        color: #6b7280;
+        margin-top: 2px;
+      }
+      input {
+        width: 100%;
+        margin-top: 8px;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 28px;
+      }
+      button {
+        padding: 10px 20px;
+        background: #111827;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:hover {
+        opacity: 0.9;
+      }
+      #status {
+        font-size: 14px;
+        color: #22c55e;
+        font-weight: 600;
+      }
+      a {
+        color: #3b82f6;
+      }
+    </style>
+  </head>
+  <body>
+    <h1><span class="dot"></span> SafeSell Settings</h1>
+    <p class="intro">
+      Paste your API keys below. They are stored locally in your browser
+      (<code>chrome.storage.local</code>) and are only sent to their respective
+      provider APIs. All three keys are required for the full analysis.
+    </p>
+
+    <label>
+      OpenAI API key
+      <small>From <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com/api-keys</a> (used for GPT-4o-mini)</small>
+    </label>
+    <input id="openai" type="password" placeholder="sk-..." autocomplete="off" />
+
+    <label>
+      Exa API key
+      <small>From <a href="https://dashboard.exa.ai/api-keys" target="_blank">dashboard.exa.ai</a> (semantic web search)</small>
+    </label>
+    <input id="exa" type="password" placeholder="..." autocomplete="off" />
+
+    <label>
+      SerpAPI key
+      <small>From <a href="https://serpapi.com/manage-api-key" target="_blank">serpapi.com</a> (Google reverse image search)</small>
+    </label>
+    <input id="serp" type="password" placeholder="..." autocomplete="off" />
+
+    <div class="row">
+      <button id="save">Save keys</button>
+      <span id="status"></span>
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+</html>

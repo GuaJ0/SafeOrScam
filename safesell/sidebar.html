@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="sidebar.css" />
+    <title>SafeSell</title>
+  </head>
+  <body>
+    <div id="panel" class="panel state-loading">
+      <!-- Header -->
+      <header class="header">
+        <div class="brand">
+          <span class="brand-dot"></span>
+          <span class="brand-name">SafeSell</span>
+        </div>
+        <button id="collapse-btn" class="collapse-btn" title="Collapse">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path
+              d="M9 6l6 6-6 6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </header>
+
+      <!-- Loading state -->
+      <section class="content loading-view">
+        <div class="spinner"></div>
+        <p class="loading-title">Checking listing safety…</p>
+        <p class="loading-sub">Searching the web for scam reports</p>
+      </section>
+
+      <!-- Verdict state -->
+      <section class="content verdict-view">
+        <div id="verdict-badge" class="verdict-badge">
+          <span id="verdict-emoji" class="verdict-emoji"></span>
+          <span id="verdict-label" class="verdict-label"></span>
+          <span id="verdict-score" class="verdict-score"></span>
+        </div>
+
+        <span id="scam-type" class="scam-type" hidden></span>
+
+        <ul id="reasons" class="reasons"></ul>
+
+        <div class="risk-row">
+          <span class="risk-badge">
+            Seller Risk: <strong id="seller-risk"></strong>
+          </span>
+          <span class="risk-badge">
+            Image Risk: <strong id="image-risk"></strong>
+          </span>
+        </div>
+
+        <p id="degraded-note" class="degraded-note" hidden></p>
+
+        <footer class="footer">Powered by Exa + OpenAI</footer>
+      </section>
+
+      <!-- Error state -->
+      <section class="content error-view">
+        <div class="error-icon">!</div>
+        <p class="error-title">Analysis unavailable</p>
+        <p class="error-sub">Could not reach one or more services</p>
+        <button id="retry-btn" class="retry-btn">Try again</button>
+        <footer class="footer">Powered by Exa + OpenAI</footer>
+      </section>
+    </div>
+
+    <!-- Collapsed tab (shown when the panel is hidden) -->
+    <button id="reopen-tab" class="reopen-tab" hidden title="Show SafeSell">
+      <span class="brand-dot"></span>
+    </button>
+
+    <script src="sidebar.js"></script>
+  </body>
+</html>
