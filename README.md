@@ -109,6 +109,9 @@ The community-vote and Google sign-in features use Supabase. A demo project is p
 
 ## Troubleshooting
 
+**The sidebar doesn't appear when you open a listing.**
+Try refreshing the page and waiting 5 seconds — the sidebar should pop up.
+
 **The sidebar doesn't pop up on a listing page.**
 This is almost always caused by **multiple Carousell tabs open at once**. Close all other active Carousell tabs, keep only the listing you want analysed, and reload the page. The sidebar should appear.
 
