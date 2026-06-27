@@ -864,7 +864,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === "SIGN_IN_GOOGLE") {
     (async () => {
       try {
+        const expectedRedirect = chrome.identity.getRedirectURL();
+        console.debug(
+          "SafeSell: OAuth redirect URL (allowlist this exact value in Supabase → Auth → URL Configuration → Redirect URLs):",
+          expectedRedirect
+        );
         const authUrl = await buildGoogleAuthUrl();
+        console.debug("SafeSell: OAuth authorize URL:", authUrl);
         const redirectUrl = await chrome.identity.launchWebAuthFlow({
           url: authUrl,
           interactive: true,
@@ -876,7 +882,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const user = await exchangeCodeForSession(code);
         sendResponse({ ok: true, user });
       } catch (err) {
-        console.error("SafeSell: Google sign-in failed:", err);
+        // "Authorization page could not be loaded" almost always means the
+        // redirect URL above is not in Supabase's allowlist (so it bounced to a
+        // non-loadable Site URL), or the unpacked extension ID changed.
+        console.error(
+          "SafeSell: Google sign-in failed:",
+          err,
+          "— verify the redirect URL is allowlisted in Supabase and that the extension ID is stable."
+        );
         sendResponse({ ok: false, error: err.message });
       }
     })();

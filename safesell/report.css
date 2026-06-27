@@ -57,6 +57,11 @@ body {
   font-weight: 800;
   font-size: 17px;
 }
+.brand-logo {
+  height: 30px;
+  width: auto;
+  display: block;
+}
 .brand-sub {
   color: var(--muted);
   font-size: 14px;
@@ -91,18 +96,29 @@ body {
   gap: 6px;
   padding: 80px 20px;
 }
-.spinner {
-  width: 46px;
-  height: 46px;
-  border: 4px solid #e5e7eb;
-  border-top-color: var(--blue);
-  border-radius: 50%;
-  animation: spin 0.9s linear infinite;
+.logo-loader {
+  display: inline-flex;
   margin-bottom: 10px;
 }
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+.logo-loader svg {
+  animation: logo-collapse 3s linear infinite;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+@keyframes logo-collapse {
+  0% {
+    transform: rotate(0deg) scale(1);
+    animation-timing-function: cubic-bezier(0.45, 0, 1, 0.55);
+  }
+  40% {
+    transform: rotate(540deg) scale(0);
+  }
+  60% {
+    transform: rotate(540deg) scale(0);
+    animation-timing-function: cubic-bezier(0, 0.45, 0.55, 1);
+  }
+  100% {
+    transform: rotate(1080deg) scale(1);
   }
 }
 .loading-title {

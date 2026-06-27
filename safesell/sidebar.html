@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="sidebar.css" />
-    <title>SafeSell</title>
+    <title>SafeOrScam</title>
   </head>
   <body>
     <div id="panel" class="panel state-loading">
@@ -12,50 +12,73 @@
       <header class="header">
         <div class="brand">
           <span class="brand-dot"></span>
-          <span class="brand-name">SafeSell</span>
+          <span class="brand-name">SOS</span>
+          <span class="brand-sub">Safe or Scam</span>
         </div>
         <button id="collapse-btn" class="collapse-btn" title="Collapse">
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <path
-              d="M9 6l6 6-6 6"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
+            <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </button>
       </header>
 
       <!-- Loading state -->
       <section class="content loading-view">
-        <div class="spinner"></div>
+        <div class="logo-loader" aria-hidden="true">
+          <svg viewBox="0 0 400 400" width="96" height="96" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <clipPath id="sb-cl"><rect x="0" y="0" width="175" height="400" /></clipPath>
+              <clipPath id="sb-cr"><rect x="175" y="0" width="225" height="400" /></clipPath>
+            </defs>
+            <line x1="251" y1="244" x2="338" y2="331" stroke="#12305A" stroke-width="46" stroke-linecap="round" />
+            <circle cx="175" cy="168" r="112" fill="#12305A" />
+            <circle cx="175" cy="168" r="96" fill="#ffffff" />
+            <circle cx="175" cy="168" r="89" fill="#00A651" clip-path="url(#sb-cl)" />
+            <circle cx="175" cy="168" r="89" fill="#D62B2B" clip-path="url(#sb-cr)" />
+          </svg>
+        </div>
         <p class="loading-title">Checking this listing…</p>
         <p class="loading-sub">Running checks on the seller, price, and photos</p>
       </section>
 
       <!-- Verdict state -->
       <section class="content verdict-view">
-        <div id="verdict-badge" class="verdict-badge">
-          <span id="verdict-emoji" class="verdict-emoji"></span>
-          <span id="verdict-label" class="verdict-label"></span>
-          <span id="verdict-score" class="verdict-score"></span>
+        <!-- Score gauge -->
+        <div class="score-section">
+          <svg class="gauge" width="200" height="118" viewBox="0 0 200 118" xmlns="http://www.w3.org/2000/svg">
+            <path class="gauge-track" d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke-width="10" stroke-linecap="round" />
+            <path id="score-arc" class="gauge-fill" d="M 20 110 A 80 80 0 0 1 180 110" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251" />
+            <text id="score-num" class="gauge-score" x="100" y="86" text-anchor="middle">--</text>
+            <text class="gauge-max" x="100" y="105" text-anchor="middle">/100</text>
+          </svg>
+          <div id="verdict-badge" class="verdict-pill">
+            <span class="pill-dot"></span>
+            <span id="verdict-label" class="pill-label"></span>
+          </div>
+          <span id="scam-type" class="scam-type" hidden></span>
         </div>
 
-        <span id="scam-type" class="scam-type" hidden></span>
+        <!-- What we found -->
+        <div class="found-section">
+          <p class="section-label">What we found</p>
+          <div id="reasons" class="concern-list"></div>
+        </div>
 
-        <ul id="reasons" class="reasons"></ul>
-
-        <div class="risk-row">
-          <span class="risk-badge">
-            <span class="risk-label">Seller</span>
-            <strong id="seller-risk"></strong>
-          </span>
-          <span class="risk-badge">
-            <span class="risk-label">Photos</span>
-            <strong id="image-risk"></strong>
-          </span>
+        <!-- Risk breakdown -->
+        <div class="risk-section">
+          <p class="section-label">Risk breakdown</p>
+          <div class="risk-rows">
+            <div class="risk-row-item">
+              <span class="risk-name">Seller</span>
+              <div class="risk-track"><div id="seller-bar" class="risk-bar"></div></div>
+              <strong id="seller-risk" class="risk-value"></strong>
+            </div>
+            <div class="risk-row-item">
+              <span class="risk-name">Photos</span>
+              <div class="risk-track"><div id="image-bar" class="risk-bar"></div></div>
+              <strong id="image-risk" class="risk-value"></strong>
+            </div>
+          </div>
         </div>
 
         <!-- Community votes -->
@@ -95,35 +118,40 @@
 
         <p id="degraded-note" class="degraded-note" hidden></p>
 
-        <button id="report-btn" class="report-btn">
-          <span>View full seller report</span>
-          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-            <path d="M14 3h7v7M21 3l-9 9M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </button>
+        <!-- CTA -->
+        <div class="cta-section">
+          <button id="report-btn" class="report-btn">
+            <span>View full seller report</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
+              <path d="M11 13l9 -9" />
+              <path d="M15 4h5v5" />
+            </svg>
+          </button>
+        </div>
 
-        <footer class="footer">SafeSell · for Carousell SG</footer>
+        <footer class="footer">SafeOrScam · for Carousell SG</footer>
       </section>
 
       <!-- Error state -->
       <section class="content error-view">
         <div class="error-icon">
           <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M8 15s1.5-2 4-2 4 2 4 2"/>
-            <line x1="9" y1="9" x2="9.01" y2="9"/>
-            <line x1="15" y1="9" x2="15.01" y2="9"/>
+            <circle cx="12" cy="12" r="10" />
+            <path d="M8 15s1.5-2 4-2 4 2 4 2" />
+            <line x1="9" y1="9" x2="9.01" y2="9" />
+            <line x1="15" y1="9" x2="15.01" y2="9" />
           </svg>
         </div>
         <p class="error-title">Couldn't check this listing</p>
         <p class="error-sub">Check your connection or API keys and try again</p>
         <button id="retry-btn" class="retry-btn">Try again</button>
-        <footer class="footer">SafeSell · for Carousell SG</footer>
+        <footer class="footer">SafeOrScam · for Carousell SG</footer>
       </section>
     </div>
 
     <!-- Collapsed tab (shown when the panel is hidden) -->
-    <button id="reopen-tab" class="reopen-tab" hidden title="Show SafeSell">
+    <button id="reopen-tab" class="reopen-tab" hidden title="Show SafeOrScam">
       <span class="brand-dot"></span>
     </button>
 

@@ -4,13 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="report.css" />
-    <title>SafeSell — Seller Report</title>
+    <title>SafeOrScam — Seller Report</title>
   </head>
   <body>
     <header class="topbar">
       <div class="brand">
-        <span class="brand-dot"></span>
-        <span class="brand-name">SafeSell</span>
+        <img src="icons/logo.png" alt="SafeOrScam" class="brand-logo" />
         <span class="brand-sub">Seller Report</span>
       </div>
       <a id="open-listing" class="topbar-link" href="#" target="_blank" hidden
@@ -21,7 +20,19 @@
     <main class="wrap">
       <!-- Loading -->
       <section id="loading" class="loading">
-        <div class="spinner"></div>
+        <div class="logo-loader" aria-hidden="true">
+          <svg viewBox="0 0 400 400" width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <clipPath id="rp-cl"><rect x="0" y="0" width="175" height="400" /></clipPath>
+              <clipPath id="rp-cr"><rect x="175" y="0" width="225" height="400" /></clipPath>
+            </defs>
+            <line x1="251" y1="244" x2="338" y2="331" stroke="#12305A" stroke-width="46" stroke-linecap="round" />
+            <circle cx="175" cy="168" r="112" fill="#12305A" />
+            <circle cx="175" cy="168" r="96" fill="#ffffff" />
+            <circle cx="175" cy="168" r="89" fill="#00A651" clip-path="url(#rp-cl)" />
+            <circle cx="175" cy="168" r="89" fill="#D62B2B" clip-path="url(#rp-cr)" />
+          </svg>
+        </div>
         <p class="loading-title">Building seller report…</p>
         <p class="loading-sub">Reading reviews &amp; searching the web</p>
       </section>
