@@ -31,8 +31,8 @@
       <!-- Loading state -->
       <section class="content loading-view">
         <div class="spinner"></div>
-        <p class="loading-title">Checking listing safety…</p>
-        <p class="loading-sub">Searching the web for scam reports</p>
+        <p class="loading-title">Checking this listing…</p>
+        <p class="loading-sub">Running checks on the seller, price, and photos</p>
       </section>
 
       <!-- Verdict state -->
@@ -49,25 +49,34 @@
 
         <div class="risk-row">
           <span class="risk-badge">
-            Seller Risk: <strong id="seller-risk"></strong>
+            <span class="risk-label">Seller</span>
+            <strong id="seller-risk"></strong>
           </span>
           <span class="risk-badge">
-            Image Risk: <strong id="image-risk"></strong>
+            <span class="risk-label">Photos</span>
+            <strong id="image-risk"></strong>
           </span>
         </div>
 
         <p id="degraded-note" class="degraded-note" hidden></p>
 
-        <footer class="footer">Powered by Exa + OpenAI</footer>
+        <footer class="footer">SafeSell · for Carousell SG</footer>
       </section>
 
       <!-- Error state -->
       <section class="content error-view">
-        <div class="error-icon">!</div>
-        <p class="error-title">Analysis unavailable</p>
-        <p class="error-sub">Could not reach one or more services</p>
+        <div class="error-icon">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M8 15s1.5-2 4-2 4 2 4 2"/>
+            <line x1="9" y1="9" x2="9.01" y2="9"/>
+            <line x1="15" y1="9" x2="15.01" y2="9"/>
+          </svg>
+        </div>
+        <p class="error-title">Couldn't check this listing</p>
+        <p class="error-sub">Check your connection or API keys and try again</p>
         <button id="retry-btn" class="retry-btn">Try again</button>
-        <footer class="footer">Powered by Exa + OpenAI</footer>
+        <footer class="footer">SafeSell · for Carousell SG</footer>
       </section>
     </div>
 

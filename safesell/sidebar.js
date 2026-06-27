@@ -46,9 +46,9 @@ function showError() {
 }
 
 function badgeFromScore(score) {
-  if (score >= 70) return { label: "LIKELY SCAM", emoji: "🔴", color: COLORS.SCAM };
+  if (score >= 65) return { label: "LIKELY SAFE", emoji: "🟢", color: COLORS.SAFE };
   if (score >= 40) return { label: "CAUTION", emoji: "🟡", color: COLORS.CAUTION };
-  return { label: "LIKELY SAFE", emoji: "🟢", color: COLORS.SAFE };
+  return { label: "LIKELY SCAM", emoji: "🔴", color: COLORS.SCAM };
 }
 
 function applyRisk(elId, level) {
@@ -64,9 +64,9 @@ function showVerdict(result) {
   let score = Number.isFinite(result.score)
     ? Math.max(0, Math.min(100, Math.round(result.score)))
     : result.verdict === "SCAM"
-    ? 85
-    : result.verdict === "SAFE"
     ? 15
+    : result.verdict === "SAFE"
+    ? 85
     : 50;
 
   const badge = badgeFromScore(score);
@@ -92,7 +92,7 @@ function showVerdict(result) {
   const reasons = Array.isArray(result.reasons) && result.reasons.length
     ? result.reasons
     : ["No specific risk factors were identified."];
-  reasons.slice(0, 3).forEach((r) => {
+  reasons.slice(0, 5).forEach((r) => {
     const li = document.createElement("li");
     li.textContent = r;
     reasonsEl.appendChild(li);
