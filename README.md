@@ -16,6 +16,20 @@ The sidebar shows a color-coded verdict:
 - 🟡 **CAUTION** — score 40–69
 - 🔴 **LIKELY SCAM** — score 70–100
 
+### Full seller report
+
+From the verdict, click **"View full seller report"** to open a dedicated, full-width report page in a **new browser tab** (cleaner than the cramped 340px sidebar). It is generated **on demand** and is laid out **pictorially** — review trends, red flags, and safety tips are shown as icon tiles (e.g. 🚚 Fast delivery, ✨ Good quality) rather than long paragraphs. It covers:
+
+- **Hero** — seller name, a Trusted / Mixed / Risky badge, one-line headline, and stat tiles (rating, reviews, joined, evidence quality)
+- **What buyers love** / **Common complaints** — icon tiles summarizing review trends
+- **Red flags** and **How to stay safe** — icon tiles
+- **Seller activity & history** and **Why this rating** — short narrative cards
+- **Web intelligence** — online mentions / scam reports (Exa), with a link to the seller's profile
+
+The report combines two data sources: the background worker fetches the seller's Carousell profile/reviews page (extracting review text where available) **and** runs a dedicated Exa web search, then OpenAI synthesizes the structured report. It only states trends supported by retrieved evidence and reports its own evidence quality.
+
+> The report opens via `report.html` (a standalone extension page). The clicked listing is passed through `chrome.storage.local`, and the page renders once the background worker returns the synthesized report.
+
 ## Project layout
 
 ```

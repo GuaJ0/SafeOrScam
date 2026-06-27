@@ -13,6 +13,7 @@ const COLORS = {
 };
 
 let collapsed = false;
+let lastResult = null; // most recent verdict
 
 // --- Communicate with the content script (parent window) ---
 function postToParent(payload) {
@@ -118,12 +119,26 @@ function showVerdict(result) {
 }
 
 function handleResult(result) {
+  lastResult = result;
   if (!result || result.verdict === "UNAVAILABLE") {
     showError();
     return;
   }
   showVerdict(result);
 }
+
+// ---- Seller report (opens in a new tab) ----
+const reportBtn = document.getElementById("report-btn");
+
+reportBtn.addEventListener("click", () => {
+  console.debug("[SafeSell] report button clicked → posting OPEN_SELLER_REPORT");
+  reportBtn.querySelector("span").textContent = "Opening report…";
+  setTimeout(() => {
+    reportBtn.querySelector("span").textContent = "View full seller report";
+  }, 2500);
+  // Pass the current verdict so the report's trust level stays consistent.
+  postToParent({ type: "OPEN_SELLER_REPORT", verdict: lastResult });
+});
 
 // --- Collapse / expand ---
 function collapse() {

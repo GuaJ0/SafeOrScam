@@ -7,6 +7,11 @@
   "host_permissions": [
     "*://*.carousell.com/*",
     "*://*.carousell.sg/*",
+    "*://*.carousell.com.my/*",
+    "*://*.carousell.ph/*",
+    "*://*.carousell.com.hk/*",
+    "*://*.carousell.tw/*",
+    "*://*.carousell.co.id/*",
     "https://api.openai.com/*",
     "https://api.exa.ai/*",
     "https://serpapi.com/*"
@@ -16,7 +21,22 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://carousell.com/p/*", "*://www.carousell.com/p/*", "*://carousell.sg/p/*", "*://www.carousell.sg/p/*"],
+      "matches": [
+        "*://carousell.com/p/*",
+        "*://www.carousell.com/p/*",
+        "*://carousell.sg/p/*",
+        "*://www.carousell.sg/p/*",
+        "*://carousell.com.my/p/*",
+        "*://www.carousell.com.my/p/*",
+        "*://carousell.ph/p/*",
+        "*://www.carousell.ph/p/*",
+        "*://carousell.com.hk/p/*",
+        "*://www.carousell.com.hk/p/*",
+        "*://carousell.tw/p/*",
+        "*://www.carousell.tw/p/*",
+        "*://carousell.co.id/p/*",
+        "*://www.carousell.co.id/p/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
@@ -34,10 +54,18 @@
   "web_accessible_resources": [
     {
       "resources": ["sidebar.html", "sidebar.css", "sidebar.js"],
-      "matches": ["*://*.carousell.com/*", "*://*.carousell.sg/*"]
+      "matches": [
+        "*://*.carousell.com/*",
+        "*://*.carousell.sg/*",
+        "*://*.carousell.com.my/*",
+        "*://*.carousell.ph/*",
+        "*://*.carousell.com.hk/*",
+        "*://*.carousell.tw/*",
+        "*://*.carousell.co.id/*"
+      ]
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openai.com https://api.exa.ai https://serpapi.com"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openai.com https://api.exa.ai https://serpapi.com https://*.carousell.com https://*.carousell.sg https://*.carousell.com.my https://*.carousell.ph https://*.carousell.com.hk https://*.carousell.tw https://*.carousell.co.id"
   }
 }

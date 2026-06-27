@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="report.css" />
+    <title>SafeSell — Seller Report</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span class="brand-name">SafeSell</span>
+        <span class="brand-sub">Seller Report</span>
+      </div>
+      <a id="open-listing" class="topbar-link" href="#" target="_blank" hidden
+        >Back to listing ↗</a
+      >
+    </header>
+
+    <main class="wrap">
+      <!-- Loading -->
+      <section id="loading" class="loading">
+        <div class="spinner"></div>
+        <p class="loading-title">Building seller report…</p>
+        <p class="loading-sub">Reading reviews &amp; searching the web</p>
+      </section>
+
+      <!-- Error -->
+      <section id="error" class="error-card" hidden>
+        <div class="error-icon">!</div>
+        <h2 id="error-title">Report unavailable</h2>
+        <p id="error-sub" class="muted"></p>
+      </section>
+
+      <!-- Report -->
+      <section id="report" hidden>
+        <!-- Hero -->
+        <div id="hero" class="hero">
+          <div class="hero-top">
+            <div>
+              <p class="hero-eyebrow">Seller</p>
+              <h1 id="seller-name" class="hero-name"></h1>
+            </div>
+            <div id="trust-badge" class="trust-badge">
+              <span id="trust-emoji" class="trust-emoji"></span>
+              <span id="trust-label"></span>
+            </div>
+          </div>
+          <p id="headline" class="hero-headline"></p>
+          <div id="stats" class="stats"></div>
+        </div>
+
+        <!-- What buyers love -->
+        <div id="sec-positives" class="section" hidden>
+          <h2 class="section-title">
+            <span class="dot-pos"></span> What buyers love
+          </h2>
+          <div id="positives" class="tile-grid"></div>
+        </div>
+
+        <!-- Common complaints -->
+        <div id="sec-complaints" class="section" hidden>
+          <h2 class="section-title">
+            <span class="dot-neg"></span> Common complaints
+          </h2>
+          <div id="complaints" class="tile-grid"></div>
+        </div>
+
+        <!-- Red flags -->
+        <div id="sec-redflags" class="section" hidden>
+          <h2 class="section-title"><span class="dot-flag"></span> Red flags</h2>
+          <div id="redflags" class="tile-grid"></div>
+        </div>
+
+        <!-- Safety tips -->
+        <div id="sec-tips" class="section" hidden>
+          <h2 class="section-title">
+            <span class="dot-tip"></span> How to stay safe
+          </h2>
+          <div id="tips" class="tile-grid"></div>
+        </div>
+
+        <!-- Narrative cards -->
+        <div class="card-row">
+          <div class="info-card">
+            <h3>📈 Seller activity &amp; history</h3>
+            <p id="activity"></p>
+          </div>
+          <div class="info-card">
+            <h3>🧭 Why this rating</h3>
+            <p id="assessment"></p>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>🌐 Web intelligence</h3>
+          <p id="webintel"></p>
+          <a id="profile-link" class="profile-link" href="#" target="_blank" hidden
+            >View seller profile ↗</a
+          >
+        </div>
+
+        <p id="sources" class="sources"></p>
+      </section>
+    </main>
+
+    <footer class="page-footer">Powered by Exa + OpenAI</footer>
+
+    <script src="report.js"></script>
+  </body>
+</html>
