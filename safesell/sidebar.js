@@ -101,6 +101,41 @@ function showVerdict(result) {
   applyRisk("seller-risk", result.sellerRisk);
   applyRisk("image-risk", result.imageRisk);
 
+  // Alternatives
+  const altSection = document.getElementById("alternatives-section");
+  const altList = document.getElementById("alternatives-list");
+  const alts = Array.isArray(result.alternatives) ? result.alternatives : [];
+  if (alts.length > 0) {
+    altList.innerHTML = "";
+    alts.forEach((alt) => {
+      const li = document.createElement("li");
+      li.className = "alt-item";
+
+      li.innerHTML = `
+        <a class="alt-card" href="${alt.url}" target="_blank" rel="noopener noreferrer">
+          <div class="alt-img-wrap">
+            ${alt.image
+              ? `<img class="alt-img" src="${alt.image}" alt="" loading="lazy" onerror="this.parentElement.classList.add('alt-img-fallback')">`
+              : `<div class="alt-img-placeholder"></div>`
+            }
+          </div>
+          <div class="alt-info">
+            <span class="alt-title">${alt.title}</span>
+            <span class="alt-price">${alt.price || "View listing"}</span>
+          </div>
+          <svg class="alt-arrow" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </a>
+      `;
+
+      altList.appendChild(li);
+    });
+    altSection.hidden = false;
+  } else {
+    altSection.hidden = true;
+  }
+
   // Degraded-mode note if some checks were unavailable.
   const note = document.getElementById("degraded-note");
   const missing = [];
