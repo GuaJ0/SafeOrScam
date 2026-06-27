@@ -1,6 +1,6 @@
 :root {
   /* Page / amber theme */
-  --page-bg: #faeeda;
+  --page-bg: #fdf6ee;
   --card-amber: #fbe5c0;
   --card-amber-border: #e8c98a;
   --card-amber-text: #a06820;
@@ -59,7 +59,7 @@ body {
 @media (prefers-color-scheme: dark) {
   html,
   body {
-    background: #2d1200;
+    background: #fdf6ee;
   }
 }
 
