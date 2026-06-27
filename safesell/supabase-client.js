@@ -200,7 +200,15 @@ async function buildGoogleAuthUrl() {
   const challenge = await generateCodeChallenge(verifier);
   await chrome.storage.local.set({ safesell_code_verifier: verifier });
 
-  const redirectUri = `https://${chrome.runtime.id}.chromiumapp.org/`;
+  // Use the canonical redirect URL that launchWebAuthFlow watches for. This is
+  // `https://<extension-id>.chromiumapp.org/` and MUST be added to Supabase's
+  // Auth → URL Configuration → Redirect URLs allowlist, otherwise Supabase
+  // falls back to the project Site URL after the Google callback and the auth
+  // window fails with "Authorization page could not be loaded."
+  const redirectUri =
+    chrome.identity && chrome.identity.getRedirectURL
+      ? chrome.identity.getRedirectURL()
+      : `https://${chrome.runtime.id}.chromiumapp.org/`;
   const params = new URLSearchParams({
     provider: "google",
     redirect_to: redirectUri,

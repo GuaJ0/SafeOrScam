@@ -1,6 +1,6 @@
-# SafeSell
+# SafeOrScam
 
-A Chrome extension (Manifest V3) that detects scam listings on **Carousell**. When you open a Carousell listing page, SafeSell scrapes the page, runs a multi-signal scam analysis, and shows a verdict in a sidebar injected into the page.
+A Chrome extension (Manifest V3) that detects scam listings on **Carousell**. When you open a Carousell listing page, SafeOrScam scrapes the page, runs a multi-signal scam analysis, and shows a verdict in a sidebar injected into the page.
 
 ## How it works
 
@@ -57,7 +57,7 @@ The extension needs **three** keys to run the full analysis:
 
 You can provide the keys in **either** of two ways:
 
-- **Recommended — Options page (no code edits):** after loading the extension, right-click the SafeSell toolbar icon → *Options* (or go to `chrome://extensions` → SafeSell → *Details* → *Extension options*). Paste the keys and click **Save**. They are stored in `chrome.storage.local`.
+- **Recommended — Options page (no code edits):** after loading the extension, right-click the SafeOrScam toolbar icon → *Options* (or go to `chrome://extensions` → SafeOrScam → *Details* → *Extension options*). Paste the keys and click **Save**. They are stored in `chrome.storage.local`.
 - **Or hard-code them:** edit the constants at the top of `safesell/background.js`. Keys saved from the Options page always take precedence over these constants.
 
 > Note: each check fails gracefully on its own. If you only supply an OpenAI key, you'll still get a verdict — just without the web-search and image signals (the sidebar shows a "partial result" note). If all three checks fail, the sidebar shows an error state.
@@ -72,7 +72,7 @@ You can provide the keys in **either** of two ways:
 
 ## Notes & limitations
 
-- **Carousell is a SPA.** SafeSell re-runs analysis on in-app navigation (patched `pushState`/`replaceState`, `popstate`, and a `MutationObserver`).
+- **Carousell is a SPA.** SafeOrScam re-runs analysis on in-app navigation (patched `pushState`/`replaceState`, `popstate`, and a `MutationObserver`).
 - **Dynamic / hashed class names.** Carousell ships obfuscated CSS classes that change between builds, so `content.js` scrapes using semantic structure (`h1`, currency/text anchors, image heuristics, regex over visible text) rather than brittle class selectors. If Carousell changes its markup and fields come back empty, update the heuristics in `content.js` (`scrapeListing` and its helpers).
 - **CORS.** All network requests are made from `background.js`; the content script never calls the APIs directly.
 - **Costs.** Exa, SerpAPI, and OpenAI calls are billable. Analysis runs once per unique listing view (de-duplicated per URL + title + price).

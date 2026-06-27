@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "SafeSell",
+  "name": "SafeOrScam",
   "version": "1.0.0",
   "description": "Detects scam listings on Carousell using semantic web search, reverse image search, and LLM reasoning.",
   "permissions": ["activeTab", "scripting", "storage", "identity"],
@@ -15,7 +15,7 @@
     "https://api.openai.com/*",
     "https://api.exa.ai/*",
     "https://serpapi.com/*",
-    "https://*.supabase.co/*"
+    "https://*.supabase.co/*",
     "https://api.github.com/*",
     "https://www.instagram.com/*"
   ],
@@ -72,7 +72,7 @@
   ],
   "options_page": "options.html",
   "action": {
-    "default_title": "SafeSell",
+    "default_title": "SafeOrScam",
     "default_icon": {
       "128": "icons/icon128.png"
     }
@@ -82,7 +82,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["sidebar.html", "sidebar.css", "sidebar.js", "search-badges.js", "chat-monitor.js", "onboarding.html", "onboarding.js", "supabase-client.js"],
+      "resources": ["sidebar.html", "sidebar.css", "sidebar.js", "search-badges.js", "chat-monitor.js", "onboarding.html", "onboarding.js", "supabase-client.js", "icons/logo.png"],
       "matches": [
         "*://*.carousell.com/*",
         "*://*.carousell.sg/*",
@@ -95,7 +95,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openai.com https://api.exa.ai https://serpapi.com https://*.carousell.com https://*.carousell.sg https://*.carousell.com.my https://*.carousell.ph https://*.carousell.com.hk https://*.carousell.tw https://*.carousell.co.id https://*.supabase.co"
-    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openai.com https://api.exa.ai https://serpapi.com https://api.github.com https://www.instagram.com https://*.carousell.com https://*.carousell.sg https://*.carousell.com.my https://*.carousell.ph https://*.carousell.com.hk https://*.carousell.tw https://*.carousell.co.id"
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openai.com https://api.exa.ai https://serpapi.com https://api.github.com https://www.instagram.com https://*.supabase.co https://*.carousell.com https://*.carousell.sg https://*.carousell.com.my https://*.carousell.ph https://*.carousell.com.hk https://*.carousell.tw https://*.carousell.co.id"
   }
 }

@@ -12,6 +12,24 @@ const COLORS = {
   UNAVAILABLE: "#6b7280",
 };
 
+// Inline Tabler outline icons (the extension runs offline under a strict CSP,
+// so icons are bundled as SVG markup rather than loaded from a webfont/CDN).
+const ICONS = {
+  user:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /></svg>',
+  coin:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1" /><path d="M12 6v2m0 8v2" /></svg>',
+  fileText:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg>',
+  camera:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h1a2 2 0 0 0 2 -2a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1a2 2 0 0 0 2 2h1a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" /><path d="M9 13a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>',
+  info:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" /></svg>',
+};
+
+// Total length of the semicircular gauge arc (radius 80 → π·80 ≈ 251).
+const ARC_LENGTH = 251;
+
 let collapsed = false;
 let lastResult = null; // most recent verdict
 
@@ -36,6 +54,13 @@ function setAccent(color) {
   panel.style.setProperty("--accent", color);
 }
 
+// Apply the verdict tone (accent + tinted background + border) to the panel.
+function setTheme(theme) {
+  panel.style.setProperty("--accent", theme.color);
+  panel.style.setProperty("--tone-bg", theme.bg);
+  panel.style.setProperty("--tone-border", theme.border);
+}
+
 function showLoading() {
   setAccent("#3b82f6");
   setState("loading");
@@ -46,18 +71,99 @@ function showError() {
   setState("error");
 }
 
-function badgeFromScore(score) {
-  if (score >= 65) return { label: "LIKELY SAFE", emoji: "🟢", color: COLORS.SAFE };
-  if (score >= 40) return { label: "CAUTION", emoji: "🟡", color: COLORS.CAUTION };
-  return { label: "LIKELY SCAM", emoji: "🔴", color: COLORS.SCAM };
+// Visual tone (color + tinted surfaces) derived from the score thresholds.
+function themeFromScore(score) {
+  if (score >= 65)
+    return { label: "LIKELY SAFE", color: "#16a34a", bg: "#f0fdf4", border: "#86efac" };
+  if (score >= 40)
+    return { label: "CAUTION", color: "#d97706", bg: "#fffbeb", border: "#fcd34d" };
+  return { label: "LIKELY SCAM", color: "#dc2626", bg: "#fef2f2", border: "#fca5a5" };
 }
 
-function applyRisk(elId, level) {
-  const el = document.getElementById(elId);
-  const value = (level || "unknown").toLowerCase();
-  el.textContent = value;
-  el.className = "";
-  if (["low", "medium", "high"].includes(value)) el.classList.add(`risk-${value}`);
+// Map a free-text concern to an icon + tone (purely presentational).
+function concernVisual(text) {
+  const t = String(text).toLowerCase();
+  if (/review|rating|feedback|history|account|joined|member/.test(t))
+    return { icon: ICONS.user, tone: "warn" };
+  if (/price|cheap|below market|low for|deal|discount|underpriced|s\$|\$|cost/.test(t))
+    return { icon: ICONS.coin, tone: "warn" };
+  if (/desc|vague|detail|missing info|qualif|generic|unclear/.test(t))
+    return { icon: ICONS.fileText, tone: "neutral" };
+  if (/image|photo|picture|\bpic\b|stock|uploaded/.test(t))
+    return { icon: ICONS.camera, tone: "neutral" };
+  return { icon: ICONS.info, tone: "neutral" };
+}
+
+// Map a risk level to a bar width, color and label.
+function riskMeta(level) {
+  const v = (level || "unknown").toLowerCase();
+  if (v === "low") return { pct: 20, color: "var(--text-success)", label: "Low" };
+  if (v === "medium") return { pct: 55, color: "var(--text-warning)", label: "Medium" };
+  if (v === "high") return { pct: 90, color: "var(--text-danger)", label: "High" };
+  return { pct: 8, color: "var(--text-muted)", label: "Unknown" };
+}
+
+function applyRiskBar(barId, valueId, level, delaySec) {
+  const bar = document.getElementById(barId);
+  const value = document.getElementById(valueId);
+  const meta = riskMeta(level);
+  value.textContent = meta.label;
+  value.style.color = meta.color;
+  bar.style.background = meta.color;
+  bar.style.width = "0%";
+  bar.style.transition = `width 1s ease ${delaySec}s`;
+  // Defer to next frame so the transition runs from 0 → target.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      bar.style.width = `${meta.pct}%`;
+    });
+  });
+}
+
+function renderConcerns(reasons) {
+  const list = document.getElementById("reasons");
+  list.innerHTML = "";
+  const items =
+    Array.isArray(reasons) && reasons.length
+      ? reasons
+      : ["No specific risk factors were identified."];
+  items.slice(0, 5).forEach((reason) => {
+    const { icon, tone } = concernVisual(reason);
+    const card = document.createElement("div");
+    card.className = "concern-card";
+
+    const iconWrap = document.createElement("div");
+    iconWrap.className = `concern-icon tone-${tone}`;
+    iconWrap.innerHTML = icon;
+
+    const body = document.createElement("div");
+    body.className = "concern-body";
+    const title = document.createElement("p");
+    title.className = "concern-title";
+    title.textContent = reason;
+    body.appendChild(title);
+
+    const dot = document.createElement("div");
+    dot.className = `concern-dot tone-${tone}`;
+
+    card.appendChild(iconWrap);
+    card.appendChild(body);
+    card.appendChild(dot);
+    list.appendChild(card);
+  });
+}
+
+function animateGauge(score) {
+  const arc = document.getElementById("score-arc");
+  if (!arc) return;
+  const target = ARC_LENGTH * (1 - score / 100);
+  // Reset, then animate on the next frame so the stroke fills in on render.
+  arc.style.strokeDashoffset = String(ARC_LENGTH);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      arc.style.strokeDashoffset = String(target);
+    });
+  });
 }
 
 function showVerdict(result) {
@@ -70,12 +176,11 @@ function showVerdict(result) {
     ? 85
     : 50;
 
-  const badge = badgeFromScore(score);
-  setAccent(badge.color);
+  const theme = themeFromScore(score);
+  setTheme(theme);
 
-  document.getElementById("verdict-emoji").textContent = badge.emoji;
-  document.getElementById("verdict-label").textContent = badge.label;
-  document.getElementById("verdict-score").textContent = `${score}/100`;
+  document.getElementById("score-num").textContent = String(score);
+  document.getElementById("verdict-label").textContent = theme.label;
 
   // Scam type tag
   const scamTypeEl = document.getElementById("scam-type");
@@ -87,20 +192,8 @@ function showVerdict(result) {
     scamTypeEl.hidden = true;
   }
 
-  // Reasons
-  const reasonsEl = document.getElementById("reasons");
-  reasonsEl.innerHTML = "";
-  const reasons = Array.isArray(result.reasons) && result.reasons.length
-    ? result.reasons
-    : ["No specific risk factors were identified."];
-  reasons.slice(0, 5).forEach((r) => {
-    const li = document.createElement("li");
-    li.textContent = r;
-    reasonsEl.appendChild(li);
-  });
-
-  applyRisk("seller-risk", result.sellerRisk);
-  applyRisk("image-risk", result.imageRisk);
+  // Concerns
+  renderConcerns(result.reasons);
 
   // Alternatives
   const altSection = document.getElementById("alternatives-section");
@@ -150,7 +243,11 @@ function showVerdict(result) {
     note.hidden = true;
   }
 
+  // Reveal the verdict view first so transitions can run, then animate.
   setState("verdict");
+  animateGauge(score);
+  applyRiskBar("seller-bar", "seller-risk", result.sellerRisk, 0.3);
+  applyRiskBar("image-bar", "image-risk", result.imageRisk, 0.5);
 }
 
 function handleResult(result) {
