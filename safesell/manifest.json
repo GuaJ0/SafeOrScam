@@ -6,6 +6,7 @@
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": [
     "*://*.carousell.com/*",
+    "*://*.carousell.sg/*",
     "https://api.openai.com/*",
     "https://api.exa.ai/*",
     "https://serpapi.com/*"
@@ -15,7 +16,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://carousell.com/p/*", "*://www.carousell.com/p/*"],
+      "matches": ["*://carousell.com/p/*", "*://www.carousell.com/p/*", "*://carousell.sg/p/*", "*://www.carousell.sg/p/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
@@ -33,7 +34,7 @@
   "web_accessible_resources": [
     {
       "resources": ["sidebar.html", "sidebar.css", "sidebar.js"],
-      "matches": ["*://*.carousell.com/*"]
+      "matches": ["*://*.carousell.com/*", "*://*.carousell.sg/*"]
     }
   ],
   "content_security_policy": {
