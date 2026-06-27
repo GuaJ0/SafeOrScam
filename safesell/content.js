@@ -9,11 +9,38 @@
   let lastUrl = location.href;
   let lastScrapeKey = "";
   let scrapeTimer = null;
+  let observer = null;
+
+  // True only while this content script's extension context is still alive.
+  // After the extension is reloaded/updated, an old injected script lingers and
+  // any chrome.* call throws "Extension context invalidated"; we bail instead.
+  function extAlive() {
+    try {
+      return !!(chrome.runtime && chrome.runtime.id);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Stop all activity once the context is dead (prevents repeated errors from
+  // the MutationObserver re-triggering on every SPA mutation).
+  function shutdown() {
+    try {
+      if (observer) observer.disconnect();
+    } catch (e) {
+      /* ignore */
+    }
+    clearTimeout(scrapeTimer);
+  }
 
   // -------------------------------------------------------------------------
   // Sidebar iframe
   // -------------------------------------------------------------------------
   function ensureSidebar() {
+    if (!extAlive()) {
+      shutdown();
+      return null;
+    }
     let frame = document.getElementById(FRAME_ID);
     if (frame) return frame;
 
@@ -120,14 +147,70 @@
     return urls.slice(0, 3);
   }
 
-  function findSeller() {
-    const out = { sellerUsername: "", sellerJoinDate: "", sellerReviews: "", sellerRating: "" };
+  // Heuristically grab short review-like blurbs visible on the listing page.
+  function findReviewSnippets() {
+    const snippets = [];
+    const els = document.querySelectorAll("p, span, div, li");
+    for (const el of els) {
+      if (el.children.length > 2) continue;
+      const t = textOf(el);
+      // Reviews tend to be sentence-length, conversational fragments.
+      if (
+        t.length >= 25 &&
+        t.length <= 300 &&
+        /\b(great|good|fast|legit|recommend|smooth|pleasant|nice|scam|cheat|fake|late|never|refund|liar|patient|friendly|deal)\b/i.test(
+          t
+        )
+      ) {
+        if (!snippets.includes(t)) snippets.push(t);
+      }
+      if (snippets.length >= 12) break;
+    }
+    return snippets;
+  }
 
-    // Username: profile link of the shape /<username>/ (single path segment).
-    const profileLink = Array.from(document.querySelectorAll('a[href^="/"]')).find(
-      (a) => /^\/[^/]+\/?$/.test(a.getAttribute("href") || "") && textOf(a)
+  function findSeller() {
+    const out = {
+      sellerUsername: "",
+      sellerJoinDate: "",
+      sellerReviews: "",
+      sellerRating: "",
+      sellerProfileUrl: "",
+      reviewSnippets: [],
+    };
+
+    // Seller profile links on Carousell are strictly of the form /u/<handle>/.
+    // The earlier, looser "/<segment>/" match accidentally caught category /
+    // breadcrumb links (e.g. "Electronics"), so we now only trust /u/ links.
+    const GENERIC =
+      /^(home|categories?|electronics|fashion|mobile phones?|computers?|shop|reviews?|visit|follow|following|share|see all|listings?|sold|new|used)$/i;
+    const profileLinks = Array.from(document.querySelectorAll('a[href]')).filter(
+      (a) => /\/u\/[^/]+\/?$/.test(a.getAttribute("href") || "")
     );
-    if (profileLink) out.sellerUsername = textOf(profileLink);
+    // Prefer a profile link whose visible text looks like a real seller name.
+    const profileLink =
+      profileLinks.find((a) => {
+        const t = textOf(a);
+        return t && !GENERIC.test(t) && t.length <= 40;
+      }) || profileLinks[0];
+
+    if (profileLink) {
+      const href = profileLink.getAttribute("href") || "";
+      const handleMatch = href.match(/\/u\/([^/]+)/);
+      const handle = handleMatch ? decodeURIComponent(handleMatch[1]) : "";
+      const text = textOf(profileLink);
+      // Use the display name when it's meaningful; otherwise fall back to the
+      // URL handle so we never label the seller with a category name.
+      out.sellerUsername = text && !GENERIC.test(text) && text.length <= 40 ? text : handle;
+      try {
+        out.sellerProfileUrl = new URL(href, location.origin).href;
+      } catch (e) {
+        /* ignore */
+      }
+    }
+
+    // Best-effort: capture any review-like text already on the listing page.
+    out.reviewSnippets = findReviewSnippets();
 
     const bodyText = document.body.innerText || "";
 
@@ -174,9 +257,13 @@
   // Analysis trigger
   // -------------------------------------------------------------------------
   function runAnalysis() {
+    if (!extAlive()) {
+      shutdown();
+      return;
+    }
     if (!LISTING_RE.test(location.pathname)) return;
 
-    ensureSidebar();
+    if (!ensureSidebar()) return;
     const listing = scrapeListing();
 
     // Avoid re-analyzing the same content repeatedly during SPA mutations.
@@ -202,6 +289,10 @@
   // SPA navigation detection
   // -------------------------------------------------------------------------
   function onMaybeNavigated() {
+    if (!extAlive()) {
+      shutdown();
+      return;
+    }
     if (location.href !== lastUrl) {
       lastUrl = location.href;
       lastScrapeKey = "";
@@ -228,7 +319,7 @@
   window.addEventListener("safesell:locationchange", onMaybeNavigated);
 
   // MutationObserver: catches both URL changes and late-rendered content.
-  const observer = new MutationObserver(() => {
+  observer = new MutationObserver(() => {
     onMaybeNavigated();
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -249,6 +340,17 @@
     if (msg.type === "REANALYZE") {
       lastScrapeKey = "";
       runAnalysis();
+    } else if (msg.type === "OPEN_SELLER_REPORT") {
+      // Open the full report in a dedicated tab (cleaner than the sidebar).
+      console.debug("[SafeSell] content: OPEN_SELLER_REPORT received → scraping + messaging background");
+      const listing = scrapeListing();
+      chrome.runtime.sendMessage({ type: "OPEN_REPORT_TAB", data: listing, verdict: msg.verdict }, (resp) => {
+        if (chrome.runtime.lastError) {
+          console.error("[SafeSell] content: OPEN_REPORT_TAB failed:", chrome.runtime.lastError.message);
+        } else {
+          console.debug("[SafeSell] content: background ack:", resp);
+        }
+      });
     } else if (msg.type === "RESIZE") {
       const frame = document.getElementById(FRAME_ID);
       if (frame) {
