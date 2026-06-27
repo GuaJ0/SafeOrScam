@@ -58,19 +58,34 @@
     return null;
   }
 
-  // Find the element whose text looks most like a price (contains a currency
-  // symbol followed by digits), preferring shorter/earlier nodes.
   function findPriceText() {
-    const candidates = document.querySelectorAll(
-      "h1, h2, h3, p, span, div"
-    );
     const priceRe = /(S?\$|RM|₱|Rp|฿)\s?[\d,.]+/;
-    for (const el of candidates) {
-      // Only leaf-ish nodes to avoid grabbing huge containers.
-      if (el.children.length > 2) continue;
-      const t = textOf(el);
-      if (t.length <= 40 && priceRe.test(t)) return t;
+
+    // First pass: look for the price near the listing title (h1), which is
+    // where Carousell always places it. Walk siblings and nearby ancestors.
+    const h1 = document.querySelector("h1");
+    if (h1) {
+      // Check siblings and parent's children within a small window.
+      const parent = h1.parentElement;
+      if (parent) {
+        for (const el of parent.querySelectorAll("p, span, div")) {
+          if (el.children.length > 2) continue;
+          const t = textOf(el);
+          if (t.length <= 30 && priceRe.test(t)) return t;
+        }
+      }
     }
+
+    // Second pass: scan the whole page but require the element to contain
+    // ONLY a price (short text, no other sentences mixed in).
+    const candidates = document.querySelectorAll("h2, h3, p, span, div");
+    for (const el of candidates) {
+      if (el.children.length > 1) continue;
+      const t = textOf(el);
+      // Must be short and the entire text should be (roughly) just a price.
+      if (t.length <= 20 && priceRe.test(t)) return t;
+    }
+
     return "";
   }
 
