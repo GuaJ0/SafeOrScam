@@ -1,0 +1,11 @@
+<svg viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SOS">
+  <defs>
+    <clipPath id="sos-l"><rect x="0" y="0" width="175" height="360" /></clipPath>
+    <clipPath id="sos-r"><rect x="175" y="0" width="185" height="360" /></clipPath>
+  </defs>
+  <line x1="251" y1="244" x2="338" y2="331" stroke="#12305A" stroke-width="46" stroke-linecap="round" />
+  <circle cx="175" cy="168" r="112" fill="#12305A" />
+  <circle cx="175" cy="168" r="96" fill="#ffffff" />
+  <circle cx="175" cy="168" r="89" fill="#00A651" clip-path="url(#sos-l)" />
+  <circle cx="175" cy="168" r="89" fill="#D62B2B" clip-path="url(#sos-r)" />
+</svg>
